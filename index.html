@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Builders: The Innovation Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .top-bar {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+        }
+
+        .game-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .stats-display {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .game-container {
+            display: flex;
+            height: calc(100vh - 70px);
+        }
+
+        .sidebar {
+            width: 280px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-right: 2px solid rgba(0, 255, 255, 0.3);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            color: #00ffff;
+            margin-bottom: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .component-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .component-item:hover {
+            background: rgba(0, 255, 255, 0.2);
+            border-color: #00ffff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 255, 0.3);
+        }
+
+        .component-item:active {
+            transform: scale(0.95);
+        }
+
+        .component-icon {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 8px;
+        }
+
+        .component-name {
+            font-size: 12px;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+
+        .component-cost {
+            font-size: 11px;
+            color: #ffa500;
+        }
+
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            background: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            overflow: hidden;
+        }
+
+        #buildCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .right-panel {
+            width: 320px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border-left: 2px solid rgba(0, 255, 255, 0.3);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .challenge-box {
+            background: rgba(255, 153, 0, 0.1);
+            border: 2px solid #ff9900;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .challenge-title {
+            font-size: 18px;
+            color: #ff9900;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .challenge-desc {
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .objectives-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .objective-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .objective-status {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        .objective-status.complete {
+            background: #00ff00;
+            border-color: #00ff00;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #000;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-danger {
+            background: rgba(255, 50, 50, 0.8);
+            color: #fff;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: rgba(255, 50, 50, 1);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .feedback-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .feedback-title {
+            font-size: 14px;
+            color: #00ffff;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .feedback-message {
+            font-size: 12px;
+            line-height: 1.6;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .feedback-success {
+            color: #00ff88;
+        }
+
+        .feedback-warning {
+            color: #ffaa00;
+        }
+
+        .feedback-error {
+            color: #ff5555;
+        }
+
+        .feedback-info {
+            color: #00ccff;
+        }
+
+        .placed-component {
+            cursor: move;
+            transition: filter 0.2s ease;
+        }
+
+        .placed-component:hover {
+            filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.6));
+        }
+
+        .placed-component.selected {
+            filter: drop-shadow(0 0 12px rgba(0, 255, 0, 0.8));
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border: 3px solid #00ffff;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 255, 255, 0.3);
+        }
+
+        .modal-title {
+            font-size: 32px;
+            color: #00ff88;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .modal-score {
+            font-size: 48px;
+            color: #ffaa00;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .simulating {
+            animation: pulse 1s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="game-title">⚡ Tech Builders: The Innovation Hub</div>
+        <div class="stats-display">
+            <div class="stat-item">
+                <span>💰</span>
+                <span id="budgetDisplay">500</span> Credits
+            </div>
+            <div class="stat-item">
+                <span>⚡</span>
+                <span id="energyDisplay">0</span> W
+            </div>
+            <div class="stat-item">
+                <span>🏆</span>
+                <span id="pointsDisplay">0</span> Points
+            </div>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="section-title">⚙️ Components Library</div>
+                <div class="component-grid" id="componentLibrary"></div>
+            </div>
+        </div>
+
+        <div class="canvas-area">
+            <svg id="buildCanvas" viewBox="0 0 1000 700"></svg>
+        </div>
+
+        <div class="right-panel">
+            <div class="challenge-box">
+                <div class="challenge-title">🎯 Solar Water Pump</div>
+                <div class="challenge-desc">
+                    Design a solar-powered water pumping system for rural communities. 
+                    Connect solar panels to provide power for the water pump.
+                </div>
+                <div class="section-title">Objectives:</div>
+                <ul class="objectives-list" id="objectivesList"></ul>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" id="runSimBtn">▶️ Run Test</button>
+                <button class="btn btn-secondary" id="stopSimBtn" disabled>⏹️ Stop</button>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-secondary" id="saveBtn">💾 Save</button>
+                <button class="btn btn-secondary" id="loadBtn">📂 Load</button>
+                <button class="btn btn-danger" id="clearBtn">🗑️ Clear</button>
+            </div>
+
+            <div class="feedback-panel">
+                <div class="feedback-title">📊 System Feedback</div>
+                <div id="feedbackMessages"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="modal-title">🎉 Challenge Complete!</div>
+            <div class="modal-score" id="modalScore">95/100</div>
+            <p id="modalMessage">Excellent work!</p>
+            <button class="btn btn-primary" onclick="closeModal()">Continue Building</button>
+        </div>
+    </div>
+
+    <script>
+        const COMPONENTS = {
+            solarPanel: {
+                name: 'Solar Panel',
+                cost: 80,
+                energy: 100,
+                weight: 5,
+                color: '#4169E1',
+                width: 120,
+                height: 80
+            },
+            motor: {
+                name: 'Motor',
+                cost: 60,
+                energy: -50,
+                weight: 8,
+                color: '#FF6347',
+                width: 80,
+                height: 80
+            },
+            waterPump: {
+                name: 'Water Pump',
+                cost: 100,
+                energy: -80,
+                weight: 12,
+                color: '#00CED1',
+                width: 100,
+                height: 90
+            },
+            battery: {
+                name: 'Battery',
+                cost: 70,
+                energy: 60,
+                weight: 10,
+                color: '#FFD700',
+                width: 80,
+                height: 80
+            },
+            gear: {
+                name: 'Gear',
+                cost: 30,
+                energy: 0,
+                weight: 3,
+                color: '#C0C0C0',
+                width: 60,
+                height: 60
+            },
+            wire: {
+                name: 'Wire',
+                cost: 10,
+                energy: 0,
+                weight: 1,
+                color: '#00FF00',
+                width: 100,
+                height: 20
+            }
+        };
+
+        class GameState {
+            constructor() {
+                this.budget = 500;
+                this.energy = 0;
+                this.points = 0;
+                this.placedComponents = [];
+                this.isSimulating = false;
+                this.selectedComponent = null;
+            }
+
+            addComponent(component) {
+                if (this.budget >= component.cost) {
+                    this.budget -= component.cost;
+                    this.placedComponents.push(component);
+                    this.updateStats();
+                    return true;
+                }
+                return false;
+            }
+
+            removeComponent(component) {
+                const index = this.placedComponents.indexOf(component);
+                if (index > -1) {
+                    this.budget += component.cost;
+                    this.placedComponents.splice(index, 1);
+                    this.updateStats();
+                }
+            }
+
+            calculateEnergy() {
+                this.energy = this.placedComponents.reduce((sum, comp) => sum + comp.energy, 0);
+            }
+
+            updateStats() {
+                this.calculateEnergy();
+                document.getElementById('budgetDisplay').textContent = this.budget;
+                document.getElementById('energyDisplay').textContent = this.energy;
+                document.getElementById('pointsDisplay').textContent = this.points;
+            }
+
+            save() {
+                const saveData = {
+                    budget: this.budget,
+                    points: this.points,
+                    components: this.placedComponents.map(c => ({
+                        type: c.type,
+                        x: c.x,
+                        y: c.y,
+                        rotation: c.rotation
+                    }))
+                };
+                localStorage.setItem('techBuildersSave', JSON.stringify(saveData));
+                addFeedback('✓ Game saved successfully!', 'success');
+            }
+
+            load() {
+                const saveData = localStorage.getItem('techBuildersSave');
+                if (saveData) {
+                    const data = JSON.parse(saveData);
+                    this.budget = data.budget;
+                    this.points = data.points;
+                    
+                    this.placedComponents = [];
+                    canvas.clearCanvas();
+                    
+                    data.components.forEach(comp => {
+                        const newComp = canvas.placeComponent(comp.type, comp.x, comp.y, false);
+                        if (newComp) {
+                            newComp.rotation = comp.rotation;
+                            canvas.updateComponentTransform(newComp);
+                        }
+                    });
+                    
+                    this.updateStats();
+                    addFeedback('✓ Game loaded successfully!', 'success');
+                } else {
+                    addFeedback('No saved game found', 'warning');
+                }
+            }
+        }
+
+        class CanvasManager {
+            constructor(svgElement) {
+                this.svg = svgElement;
+                this.draggedElement = null;
+                this.dragOffset = {x: 0, y: 0};
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                this.svg.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                this.svg.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                this.svg.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Delete' && gameState.selectedComponent && !gameState.isSimulating) {
+                        this.removeComponent(gameState.selectedComponent);
+                    }
+                    if (e.key === 'r' && gameState.selectedComponent && !gameState.isSimulating) {
+                        this.rotateComponent(gameState.selectedComponent, 45);
+                    }
+                });
+            }
+
+            getSVGPoint(event) {
+                const rect = this.svg.getBoundingClientRect();
+                const viewBox = this.svg.viewBox.baseVal;
+                const scaleX = viewBox.width / rect.width;
+                const scaleY = viewBox.height / rect.height;
+                
+                return {
+                    x: (event.clientX - rect.left) * scaleX,
+                    y: (event.clientY - rect.top) * scaleY
+                };
+            }
+
+            handleMouseDown(e) {
+                if (gameState.isSimulating) return;
+                
+                const target = e.target.closest('.placed-component');
+                if (target) {
+                    this.draggedElement = target;
+                    const point = this.getSVGPoint(e);
+                    const comp = gameState.placedComponents.find(c => c.element === target);
+                    if (comp) {
+                        this.dragOffset = {
+                            x: point.x - comp.x,
+                            y: point.y - comp.y
+                        };
+                        this.selectComponent(comp);
+                    }
+                    e.preventDefault();
+                }
+            }
+
+            handleMouseMove(e) {
+                if (this.draggedElement && !gameState.isSimulating) {
+                    const point = this.getSVGPoint(e);
+                    const comp = gameState.placedComponents.find(c => c.element === this.draggedElement);
+                    if (comp) {
+                        comp.x = point.x - this.dragOffset.x;
+                        comp.y = point.y - this.dragOffset.y;
+                        this.updateComponentTransform(comp);
+                    }
+                    e.preventDefault();
+                }
+            }
+
+            handleMouseUp(e) {
+                this.draggedElement = null;
+            }
+
+            selectComponent(comp) {
+                if (gameState.selectedComponent && gameState.selectedComponent.element) {
+                    gameState.selectedComponent.element.classList.remove('selected');
+                }
+                gameState.selectedComponent = comp;
+                comp.element.classList.add('selected');
+            }
+
+            placeComponent(type, x, y, deductCost = true) {
+                const template = COMPONENTS[type];
+                if (!template) return null;
+
+                const component = {
+                    ...template,
+                    type,
+                    x: x,
+                    y: y,
+                    rotation: 0,
+                    id: Date.now() + Math.random()
+                };
+
+                if (deductCost && !gameState.addComponent(component)) {
+                    addFeedback('✗ Insufficient credits!', 'error');
+                    return null;
+                }
+
+                if (!deductCost) {
+                    gameState.placedComponents.push(component);
+                }
+
+                this.renderComponent(component);
+                addFeedback(`✓ ${component.name} placed`, 'success');
+                return component;
+            }
+
+            renderComponent(component) {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.classList.add('placed-component');
+                g.setAttribute('data-id', component.id);
+
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('width', component.width);
+                rect.setAttribute('height', component.height);
+                rect.setAttribute('fill', component.color);
+                rect.setAttribute('stroke', '#00ffff');
+                rect.setAttribute('stroke-width', '2');
+                rect.setAttribute('rx', '8');
+                rect.setAttribute('opacity', '0.85');
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', component.width / 2);
+                text.setAttribute('y', component.height / 2);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.setAttribute('fill', '#ffffff');
+                text.setAttribute('font-size', '14');
+                text.setAttribute('font-weight', 'bold');
+                text.setAttribute('pointer-events', 'none');
+                text.textContent = component.name;
+
+                const energyText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                energyText.setAttribute('x', component.width / 2);
+                energyText.setAttribute('y', component.height / 2 + 18);
+                energyText.setAttribute('text-anchor', 'middle');
+                energyText.setAttribute('fill', component.energy > 0 ? '#00ff88' : '#ff6666');
+                energyText.setAttribute('font-size', '11');
+                energyText.setAttribute('pointer-events', 'none');
+                energyText.textContent = component.energy !== 0 ? `${component.energy > 0 ? '+' : ''}${component.energy}W` : '';
+
+                g.appendChild(rect);
+                g.appendChild(text);
+                g.appendChild(energyText);
+
+                component.element = g;
+                this.updateComponentTransform(component);
+                this.svg.appendChild(g);
+            }
+
+            updateComponentTransform(component) {
+                if (!component.element) return;
+                const transform = `translate(${component.x}, ${component.y}) rotate(${component.rotation}, ${component.width/2}, ${component.height/2})`;
+                component.element.setAttribute('transform', transform);
+            }
+
+            rotateComponent(component, angle) {
+                component.rotation = (component.rotation + angle) % 360;
+                this.updateComponentTransform(component);
+                addFeedback(`Rotated ${component.name}`, 'info');
+            }
+
+            removeComponent(component) {
+                if (component.element) {
+                    this.svg.removeChild(component.element);
+                }
+                gameState.removeComponent(component);
+                if (gameState.selectedComponent === component) {
+                    gameState.selectedComponent = null;
+                }
+                addFeedback(`Removed ${component.name}`, 'info');
+            }
+
+            clearCanvas() {
+                while (this.svg.firstChild) {
+                    this.svg.removeChild(this.svg.firstChild);
+                }
+            }
+        }
+
+        class Challenge {
+            constructor(data) {
+                this.title = data.title;
+                this.description = data.description;
+                this.objectives = data.objectives;
+            }
+
+            render() {
+                const objectivesList = document.getElementById('objectivesList');
+                objectivesList.innerHTML = '';
+                
+                this.objectives.forEach(obj => {
+                    const li = document.createElement('li');
+                    li.className = 'objective-item';
+                    li.innerHTML = `
+                        <span class="objective-status" id="obj-${obj.id}"></span>
+                        <span>${obj.text}</span>
+                    `;
+                    objectivesList.appendChild(li);
+                });
+            }
+
+            evaluate() {
+                const results = {
+                    score: 0,
+                    feedback: [],
+                    objectivesComplete: 0
+                };
+
+                const netEnergy = gameState.energy;
+                if (netEnergy > 0) {
+                    results.score += 30;
+                    results.feedback.push({type: 'success', message: `✓ Positive energy: ${netEnergy}W`});
+                    this.markObjective('energy', true);
+                    results.objectivesComplete++;
+                } else {
+                    results.feedback.push({type: 'error', message: `✗ Negative energy: ${netEnergy}W`});
+                    this.markObjective('energy', false);
+                }
+
+                const hasPanel = gameState.placedComponents.some(c => c.type === 'solarPanel');
+                const hasPump = gameState.placedComponents.some(c => c.type === 'waterPump');
+
+                if (hasPanel) {
+                    results.score += 25;
+                    results.feedback.push({type: 'success', message: '✓ Solar panel installed'});
+                    this.markObjective('solar', true);
+                    results.objectivesComplete++;
+                } else {
+                    results.feedback.push({type: 'warning', message: '⚠ Missing solar panel'});
+                    this.markObjective('solar', false);
+                }
+
+                if (hasPump) {
+                    results.score += 30;
+                    results.feedback.push({type: 'success', message: '✓ Water pump installed'});
+                    this.markObjective('pump', true);
+                    results.objectivesComplete++;
+                } else {
+                    results.feedback.push({type: 'warning', message: '⚠ Missing water pump'});
+                    this.markObjective('pump', false);
+                }
+
+                const componentCount = gameState.placedComponents.length;
+                if (componentCount >= 2 && componentCount <= 6) {
+                    results.score += 15;
+                    results.feedback.push({type: 'success', message: '✓ Efficient design'});
+                    this.markObjective('efficient', true);
+                    results.objectivesComplete++;
+                } else {
+                    this.markObjective('efficient', false);
+                }
+
+                return results;
+            }
+
+            markObjective(id, complete) {
+                const element = document.getElementById(`obj-${id}`);
+                if (element) {
+                    if (complete) {
+                        element.classList.add('complete');
+                    } else {
+                        element.classList.remove('complete');
+                    }
+                }
+            }
+        }
+
+        class SimulationEngine {
+            constructor() {
+                this.running = false;
+                this.animationFrame = null;
+            }
+
+            start() {
+                if (gameState.placedComponents.length === 0) {
+                    addFeedback('⚠ Place some components first!', 'warning');
+                    return;
+                }
+
+                this.running = true;
+                gameState.isSimulating = true;
+
+                gameState.placedComponents.forEach(comp => {
+                    if (comp.element) {
+                        comp.element.classList.add('simulating');
+                    }
+                });
+
+                addFeedback('▶️ Simulation running...', 'info');
+                document.getElementById('runSimBtn').disabled = true;
+                document.getElementById('stopSimBtn').disabled = false;
+
+                setTimeout(() => {
+                    this.stop();
+                    this.evaluate();
+                }, 3000);
+            }
+
+            stop() {
+                this.running = false;
+                gameState.isSimulating = false;
+
+                gameState.placedComponents.forEach(comp => {
+                    if (comp.element) {
+                        comp.element.classList.remove('simulating');
+                    }
+                });
+
+                document.getElementById('runSimBtn').disabled = false;
+                document.getElementById('stopSimBtn').disabled = true;
+            }
+
+            evaluate() {
+                const results = currentChallenge.evaluate();
+                
+                results.feedback.forEach(fb => {
+                    addFeedback(fb.message, fb.type);
+                });
+
+                const pointsEarned = Math.floor(results.score);
+                gameState.points += pointsEarned;
+                gameState.updateStats();
+
+                if (results.score >= 70) {
+                    showSuccessModal(results.score, results.objectivesComplete);
+                } else {
+                    addFeedback(`Score: ${results.score}/100. Keep improving!`, 'warning');
+                }
+            }
+        }
+
+        function addFeedback(message, type = 'info') {
+            const feedbackContainer = document.getElementById('feedbackMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `feedback-message feedback-${type}`;
+            messageDiv.textContent = message;
+            
+            feedbackContainer.insertBefore(messageDiv, feedbackContainer.firstChild);
+            
+            while (feedbackContainer.children.length > 10) {
+                feedbackContainer.removeChild(feedbackContainer.lastChild);
+            }
+        }
+
+        function showSuccessModal(score, objectives) {
+            const modal = document.getElementById('successModal');
+            document.getElementById('modalScore').textContent = `${score}/100`;
+            
+            let message = score >= 90 ? 'Outstanding engineering!' :
+                         score >= 80 ? 'Great work on your design!' :
+                         'Good job! Keep optimizing.';
+            
+            document.getElementById('modalMessage').textContent = message;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('successModal').style.display = 'none';
+        }
+
+        function initializeComponentLibrary() {
+            const library = document.getElementById('componentLibrary');
+            library.innerHTML = '';
+
+            Object.keys(COMPONENTS).forEach(key => {
+                const comp = COMPONENTS[key];
+                const item = document.createElement('div');
+                item.className = 'component-item';
+                item.innerHTML = `
+                    <svg class="component-icon" viewBox="0 0 100 100">
+                        <rect x="10" y="20" width="80" height="60" fill="${comp.color}" stroke="#fff" stroke-width="3" rx="5"/>
+                    </svg>
+                    <div class="component-name">${comp.name}</div>
+                    <div class="component-cost">💰 ${comp.cost}</div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    const centerX = 400;
+                    const centerY = 300;
+                    canvas.placeComponent(key, centerX, centerY);
+                });
+                
+                library.appendChild(item);
+            });
+        }
+
+        const gameState = new GameState();
+        const canvas = new CanvasManager(document.getElementById('buildCanvas'));
+        const simulation = new SimulationEngine();
+
+        const currentChallenge = new Challenge({
+            title: 'Solar Water Pump',
+            description: 'Design a solar-powered water pumping system for rural communities.',
+            objectives: [
+                {id: 'energy', text: 'Generate positive net energy'},
+                {id: 'solar', text: 'Use at least one solar panel'},
+                {id: 'pump', text: 'Include a water pump'},
+                {id: 'efficient', text: 'Keep design efficient (2-6 components)'}
+            ]
+        });
+
+        initializeComponentLibrary();
+        currentChallenge.render();
+        gameState.updateStats();
+
+        document.getElementById('runSimBtn').addEventListener('click', () => {
+            simulation.start();
+        });
+
+        document.getElementById('stopSimBtn').addEventListener('click', () => {
+            simulation.stop();
+        });
+
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            gameState.save();
+        });
+
+        document.getElementById('loadBtn').addEventListener('click', () => {
+            gameState.load();
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (confirm('Clear all components? This cannot be undone.')) {
+                canvas.clearCanvas();
+                gameState.placedComponents = [];
+                gameState.budget = 500;
+                gameState.points = 0;
+                gameState.selectedComponent = null;
+                gameState.updateStats();
+                currentChallenge.render();
+                addFeedback('Canvas cleared', 'info');
+            }
+        });
+
+        addFeedback('👋 Welcome to Tech Builders!', 'success');
+        addFeedback('Click components on the left to place them', 'info');
+        addFeedback('Drag to move, press R to rotate, Delete to remove', 'info');
+    </script>
+</body>
+</html>
