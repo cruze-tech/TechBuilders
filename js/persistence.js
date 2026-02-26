@@ -1,90 +1,107 @@
 (function (root) {
     const SAVE_KEY = 'techBuildersSave';
-    const SAVE_VERSION = 2;
+    const SAVE_VERSION = 3;
 
     function safeNumber(value, fallback) {
         return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
     }
 
-    function normalizeComponentRecord(record) {
-        if (!record || typeof record !== 'object') {
-            return null;
-        }
+    function safeArray(value) {
+        return Array.isArray(value) ? value : [];
+    }
 
-        if (typeof record.type !== 'string') {
+    function normalizeComponent(component, index) {
+        if (!component || typeof component !== 'object' || typeof component.type !== 'string') {
             return null;
         }
 
         return {
-            id: typeof record.id === 'string' ? record.id : null,
-            type: record.type,
-            x: safeNumber(record.x, 0),
-            y: safeNumber(record.y, 0),
-            rotation: safeNumber(record.rotation, 0)
+            id: typeof component.id === 'string' ? component.id : `c-${index + 1}`,
+            type: component.type,
+            x: safeNumber(component.x, 0),
+            y: safeNumber(component.y, 0),
+            rotation: safeNumber(component.rotation, 0)
         };
     }
 
-    function migrateV1ToV2(data) {
-        const components = Array.isArray(data.components) ? data.components : [];
+    function normalizeCampaign(campaign) {
+        const source = campaign && typeof campaign === 'object' ? campaign : {};
         return {
-            version: SAVE_VERSION,
+            currentExperimentId: typeof source.currentExperimentId === 'string' ? source.currentExperimentId : null,
+            unlockedExperiments: safeArray(source.unlockedExperiments).filter((id) => typeof id === 'string'),
+            completedExperiments: source.completedExperiments && typeof source.completedExperiments === 'object' ? source.completedExperiments : {},
+            starsByExperiment: source.starsByExperiment && typeof source.starsByExperiment === 'object' ? source.starsByExperiment : {},
+            badges: safeArray(source.badges).filter((badge) => typeof badge === 'string'),
+            highestTierUnlocked: Math.max(1, safeNumber(source.highestTierUnlocked, 1))
+        };
+    }
+
+    function normalizeSessionStats(stats) {
+        const source = stats && typeof stats === 'object' ? stats : {};
+        return {
+            runs: Math.max(0, safeNumber(source.runs, 0)),
+            passes: Math.max(0, safeNumber(source.passes, 0)),
+            fails: Math.max(0, safeNumber(source.fails, 0)),
+            hintsUsed: Math.max(0, safeNumber(source.hintsUsed, 0)),
+            componentsPlaced: Math.max(0, safeNumber(source.componentsPlaced, 0))
+        };
+    }
+
+    function normalizeState(sourceState) {
+        const state = sourceState && typeof sourceState === 'object' ? sourceState : {};
+
+        return {
+            budgetStart: safeNumber(state.budgetStart, safeNumber(state.budget, 500)),
+            budget: safeNumber(state.budget, 500),
+            points: safeNumber(state.points, 0),
+            bestScore: safeNumber(state.bestScore, safeNumber(state.points, 0)),
+            designVersion: Math.max(0, safeNumber(state.designVersion, 0)),
+            lastScoredVersion: safeNumber(state.lastScoredVersion, -1),
+            nextComponentId: Math.max(0, safeNumber(state.nextComponentId, 0)),
+            activeChallengeId: typeof state.activeChallengeId === 'string' ? state.activeChallengeId : null,
+            components: safeArray(state.components)
+                .map(normalizeComponent)
+                .filter(Boolean),
+            campaign: normalizeCampaign(state.campaign),
+            analyticsLog: safeArray(state.analyticsLog)
+                .filter((event) => event && typeof event === 'object')
+                .map((event) => ({
+                    type: typeof event.type === 'string' ? event.type : 'unknown',
+                    timestamp: typeof event.timestamp === 'string' ? event.timestamp : new Date().toISOString(),
+                    payload: event.payload && typeof event.payload === 'object' ? event.payload : {}
+                })),
+            sessionStats: normalizeSessionStats(state.sessionStats)
+        };
+    }
+
+    function migrateV1ToV2(oldData) {
+        return {
+            version: 2,
             savedAt: new Date().toISOString(),
             state: {
-                budget: safeNumber(data.budget, 500),
-                points: safeNumber(data.points, 0),
-                bestScore: safeNumber(data.points, 0),
-                designVersion: components.length > 0 ? 1 : 0,
-                lastScoredVersion: components.length > 0 ? 1 : -1,
-                nextComponentId: components.length,
-                components: components
-                    .map(normalizeComponentRecord)
-                    .filter(Boolean)
-                    .map((component, index) => ({
-                        id: `c-${index + 1}`,
-                        type: component.type,
-                        x: component.x,
-                        y: component.y,
-                        rotation: component.rotation
-                    }))
+                budgetStart: safeNumber(oldData.budget, 500),
+                budget: safeNumber(oldData.budget, 500),
+                points: safeNumber(oldData.points, 0),
+                bestScore: safeNumber(oldData.points, 0),
+                designVersion: 0,
+                lastScoredVersion: -1,
+                nextComponentId: safeArray(oldData.components).length,
+                activeChallengeId: 'exp-01',
+                components: safeArray(oldData.components)
+                    .map(normalizeComponent)
+                    .filter(Boolean),
+                campaign: normalizeCampaign({ unlockedExperiments: ['exp-01'] }),
+                analyticsLog: [],
+                sessionStats: normalizeSessionStats({})
             }
         };
     }
 
-    function normalizeV2(data) {
-        if (!data || typeof data !== 'object' || typeof data.state !== 'object') {
-            return null;
-        }
-
-        const rawState = data.state;
-        const components = Array.isArray(rawState.components) ? rawState.components : [];
-        const normalizedComponents = [];
-
-        components.forEach((component, index) => {
-            const normalized = normalizeComponentRecord(component);
-            if (!normalized) {
-                return;
-            }
-            normalizedComponents.push({
-                id: normalized.id || `c-${index + 1}`,
-                type: normalized.type,
-                x: normalized.x,
-                y: normalized.y,
-                rotation: normalized.rotation
-            });
-        });
-
+    function migrateV2ToV3(v2Data) {
         return {
             version: SAVE_VERSION,
-            savedAt: typeof data.savedAt === 'string' ? data.savedAt : new Date().toISOString(),
-            state: {
-                budget: safeNumber(rawState.budget, 500),
-                points: safeNumber(rawState.points, 0),
-                bestScore: safeNumber(rawState.bestScore, safeNumber(rawState.points, 0)),
-                designVersion: Math.max(0, safeNumber(rawState.designVersion, normalizedComponents.length > 0 ? 1 : 0)),
-                lastScoredVersion: safeNumber(rawState.lastScoredVersion, -1),
-                nextComponentId: Math.max(safeNumber(rawState.nextComponentId, normalizedComponents.length), normalizedComponents.length),
-                components: normalizedComponents
-            }
+            savedAt: typeof v2Data.savedAt === 'string' ? v2Data.savedAt : new Date().toISOString(),
+            state: normalizeState(v2Data.state)
         };
     }
 
@@ -93,34 +110,30 @@
             return null;
         }
 
-        if (typeof rawData.version === 'number' && rawData.version >= 2) {
-            return normalizeV2(rawData);
+        if (rawData.version === 1 || typeof rawData.version !== 'number') {
+            return migrateV2ToV3(migrateV1ToV2(rawData));
         }
 
-        return migrateV1ToV2(rawData);
+        if (rawData.version === 2) {
+            return migrateV2ToV3(rawData);
+        }
+
+        if (rawData.version >= 3) {
+            return {
+                version: SAVE_VERSION,
+                savedAt: typeof rawData.savedAt === 'string' ? rawData.savedAt : new Date().toISOString(),
+                state: normalizeState(rawData.state)
+            };
+        }
+
+        return null;
     }
 
     function createSaveData(state) {
         return {
             version: SAVE_VERSION,
             savedAt: new Date().toISOString(),
-            state: {
-                budget: safeNumber(state.budget, 500),
-                points: safeNumber(state.points, 0),
-                bestScore: safeNumber(state.bestScore, safeNumber(state.points, 0)),
-                designVersion: Math.max(0, safeNumber(state.designVersion, 0)),
-                lastScoredVersion: safeNumber(state.lastScoredVersion, -1),
-                nextComponentId: Math.max(0, safeNumber(state.nextComponentId, 0)),
-                components: Array.isArray(state.components)
-                    ? state.components.map((component) => ({
-                          id: typeof component.id === 'string' ? component.id : null,
-                          type: component.type,
-                          x: safeNumber(component.x, 0),
-                          y: safeNumber(component.y, 0),
-                          rotation: safeNumber(component.rotation, 0)
-                      }))
-                    : []
-            }
+            state: normalizeState(state)
         };
     }
 
@@ -161,6 +174,7 @@
     const Persistence = {
         SAVE_KEY,
         SAVE_VERSION,
+        normalizeState,
         migrateSaveData,
         createSaveData,
         parseSaveText,

@@ -1,43 +1,449 @@
 {
-    "schemaVersion": 1,
+    "schemaVersion": 2,
+    "campaignTitle": "Tech Builders Innovation Sprint",
     "challenges": [
         {
-            "id": "solar-water-pump",
-            "title": "Solar Water Pump",
-            "description": "Design a resilient system where solar generation is delivered to a water pump through wire connections.",
-            "passScore": 75,
+            "id": "exp-01",
+            "title": "EXP-01: Solar Irrigation Starter",
+            "tier": 1,
+            "difficulty": "starter",
+            "estimatedMinutes": 12,
+            "description": "Power a rural irrigation line with reliable daytime output.",
+            "learningGoals": [
+                "Balance generation and demand",
+                "Use wires to deliver power to critical loads"
+            ],
+            "briefing": {
+                "story": "A farming cooperative needs a stable irrigation setup before the dry week begins.",
+                "task": "Build a compact solar network that keeps the water pump powered.",
+                "hints": [
+                    "Connect generation to the pump through wires.",
+                    "Keep the design efficient to reduce wasted budget."
+                ]
+            },
+            "debrief": {
+                "success": "Your system helped secure the next crop cycle.",
+                "improve": "Try reducing unnecessary parts while keeping the pump powered."
+            },
+            "scenario": {
+                "weather": "Sunny",
+                "demandSpike": 1.0,
+                "outageWindow": { "enabled": false, "severity": 0.0 },
+                "timeOfDay": "day",
+                "throughputTarget": 65,
+                "budgetCap": 500
+            },
+            "unlockRewards": {
+                "badge": "Field Starter",
+                "unlocks": ["exp-02"]
+            },
+            "passScore": 70,
             "objectives": [
-                {
-                    "id": "positive-energy",
-                    "type": "positive_energy",
-                    "weight": 25,
-                    "text": "System has positive usable net energy",
-                    "threshold": 0
-                },
-                {
-                    "id": "solar-required",
-                    "type": "component_presence",
-                    "componentType": "solarPanel",
-                    "minCount": 1,
-                    "weight": 20,
-                    "text": "At least one solar panel is installed"
-                },
-                {
-                    "id": "pump-powered",
-                    "type": "powered_component",
-                    "componentType": "waterPump",
-                    "minCount": 1,
-                    "weight": 35,
-                    "text": "Water pump is powered through wires"
-                },
-                {
-                    "id": "efficient-design",
-                    "type": "component_count_range",
-                    "min": 2,
-                    "max": 8,
-                    "weight": 20,
-                    "text": "Design stays efficient (2 to 8 components)"
-                }
+                { "id": "e1-energy", "type": "positive_energy", "text": "Keep usable net energy above zero", "weight": 25, "threshold": 0 },
+                { "id": "e1-pump", "type": "powered_component", "text": "Power at least one water pump through wires", "weight": 30, "componentType": "waterPump", "minCount": 1 },
+                { "id": "e1-throughput", "type": "throughput_target", "text": "Reach irrigation throughput target", "weight": 25, "target": 65 },
+                { "id": "e1-budget", "type": "budget_cap", "text": "Stay under 500 credits spent", "weight": 20, "maxTarget": 500 }
+            ]
+        },
+        {
+            "id": "exp-02",
+            "title": "EXP-02: Clean Water Filtration Unit",
+            "tier": 1,
+            "difficulty": "starter",
+            "estimatedMinutes": 14,
+            "description": "Run a pump and filtration unit for safe community water.",
+            "learningGoals": [
+                "Plan multi-load networks",
+                "Use treatment components to increase useful throughput"
+            ],
+            "briefing": {
+                "story": "A community clinic needs cleaner water before opening next week.",
+                "task": "Deliver energy to both the pump and filtration equipment.",
+                "hints": [
+                    "Filter units add throughput only when powered.",
+                    "Add storage if your net energy is unstable."
+                ]
+            },
+            "debrief": {
+                "success": "Your design improved daily clean-water delivery.",
+                "improve": "Tune component mix to get more throughput per credit."
+            },
+            "scenario": {
+                "weather": "Partly Cloudy",
+                "demandSpike": 1.15,
+                "outageWindow": { "enabled": false, "severity": 0.0 },
+                "timeOfDay": "mixed",
+                "throughputTarget": 95,
+                "efficiencyTarget": 0.45,
+                "budgetCap": 550
+            },
+            "unlockRewards": {
+                "badge": "Water Guardian",
+                "unlocks": ["exp-03"]
+            },
+            "passScore": 72,
+            "objectives": [
+                { "id": "e2-filter", "type": "component_presence", "text": "Install at least one filter unit", "weight": 20, "componentType": "filterUnit", "minCount": 1 },
+                { "id": "e2-pump", "type": "powered_component", "text": "Pump must be wire-powered", "weight": 25, "componentType": "waterPump", "minCount": 1 },
+                { "id": "e2-throughput", "type": "throughput_target", "text": "Reach clean-water throughput target", "weight": 30, "target": 95 },
+                { "id": "e2-eff", "type": "efficiency_ratio", "text": "Hit minimum efficiency ratio", "weight": 25, "target": 0.45 }
+            ]
+        },
+        {
+            "id": "exp-03",
+            "title": "EXP-03: Smart Street Lighting Circuit",
+            "tier": 1,
+            "difficulty": "intermediate",
+            "estimatedMinutes": 15,
+            "description": "Keep street lights stable through evening demand spikes.",
+            "learningGoals": [
+                "Use storage for peak periods",
+                "Design reserve-aware systems"
+            ],
+            "briefing": {
+                "story": "Town safety depends on reliable evening lighting on market roads.",
+                "task": "Build a circuit that handles peak demand after sunset.",
+                "hints": [
+                    "Reserve metrics improve with powered storage.",
+                    "Distributed generation can improve reliability."
+                ]
+            },
+            "debrief": {
+                "success": "You kept key roads visible during high demand.",
+                "improve": "Increase reserve while lowering cost overhead."
+            },
+            "scenario": {
+                "weather": "Windy Evening",
+                "demandSpike": 1.3,
+                "outageWindow": { "enabled": false, "severity": 0.0 },
+                "timeOfDay": "evening",
+                "reserveTarget": 0.55,
+                "budgetCap": 600
+            },
+            "unlockRewards": {
+                "badge": "Night Grid Rookie",
+                "unlocks": ["exp-04", "exp-05"]
+            },
+            "passScore": 74,
+            "objectives": [
+                { "id": "e3-light", "type": "powered_component", "text": "Power at least two street lights", "weight": 25, "componentType": "streetLight", "minCount": 2 },
+                { "id": "e3-reserve", "type": "runtime_reserve", "text": "Maintain runtime reserve above 0.55", "weight": 30, "target": 0.55 },
+                { "id": "e3-budget", "type": "budget_cap", "text": "Stay under 600 credits spent", "weight": 20, "maxTarget": 600 },
+                { "id": "e3-redundancy", "type": "redundancy_required", "text": "Use at least two generation sources", "weight": 25, "target": 2 }
+            ]
+        },
+        {
+            "id": "exp-04",
+            "title": "EXP-04: Community Clinic Cold Storage",
+            "tier": 2,
+            "difficulty": "intermediate",
+            "estimatedMinutes": 16,
+            "description": "Keep vaccine cooling online during a disruption window.",
+            "learningGoals": [
+                "Prioritize critical loads",
+                "Design reliability with outage resilience"
+            ],
+            "briefing": {
+                "story": "The clinic expects a short outage while vaccine stock must remain cold.",
+                "task": "Guarantee high uptime for the cold-storage load.",
+                "hints": [
+                    "Critical uptime drops when outage severity is high and reserves are low.",
+                    "Redundant generation helps maintain service continuity."
+                ]
+            },
+            "debrief": {
+                "success": "Your design protected lifesaving medical supplies.",
+                "improve": "Lift uptime with stronger reserve planning."
+            },
+            "scenario": {
+                "weather": "Humid",
+                "demandSpike": 1.15,
+                "outageWindow": { "enabled": true, "severity": 0.35 },
+                "timeOfDay": "mixed",
+                "criticalLoadTarget": 0.98,
+                "reserveTarget": 0.65,
+                "budgetCap": 650
+            },
+            "unlockRewards": {
+                "badge": "Clinic Protector",
+                "unlocks": ["exp-06"]
+            },
+            "passScore": 78,
+            "objectives": [
+                { "id": "e4-cold", "type": "powered_component", "text": "Power vaccine cooler continuously", "weight": 25, "componentType": "vaccineCooler", "minCount": 1 },
+                { "id": "e4-critical", "type": "critical_load_uptime", "text": "Keep critical load uptime above 98%", "weight": 30, "target": 0.98 },
+                { "id": "e4-reserve", "type": "runtime_reserve", "text": "Maintain reserve for outage conditions", "weight": 25, "target": 0.65 },
+                { "id": "e4-redundancy", "type": "redundancy_required", "text": "Use three generation lines", "weight": 20, "target": 3 }
+            ]
+        },
+        {
+            "id": "exp-05",
+            "title": "EXP-05: Greenhouse Automation Hub",
+            "tier": 2,
+            "difficulty": "intermediate",
+            "estimatedMinutes": 15,
+            "description": "Run fans, sensors, and irrigation controls for a smart greenhouse.",
+            "learningGoals": [
+                "Validate signal chains",
+                "Coordinate monitoring and control loads"
+            ],
+            "briefing": {
+                "story": "A greenhouse wants automated crop climate control before the weekend market.",
+                "task": "Ensure monitoring and control components are fully connected and powered.",
+                "hints": [
+                    "Signal-chain checks require powered sensor and controller roles.",
+                    "Use balanced generation to keep efficiency high."
+                ]
+            },
+            "debrief": {
+                "success": "Your automation network improved crop stability.",
+                "improve": "Increase efficiency while keeping control logic intact."
+            },
+            "scenario": {
+                "weather": "Hot Day",
+                "demandSpike": 1.2,
+                "outageWindow": { "enabled": false, "severity": 0.0 },
+                "timeOfDay": "day",
+                "efficiencyTarget": 0.5,
+                "budgetCap": 620
+            },
+            "unlockRewards": {
+                "badge": "Agri-Automation Builder",
+                "unlocks": ["exp-06"]
+            },
+            "passScore": 76,
+            "objectives": [
+                { "id": "e5-signal", "type": "signal_chain_valid", "text": "Activate sensor-controller-actuator chain", "weight": 30, "roles": ["sensor", "controller", "actuator"] },
+                { "id": "e5-throughput", "type": "throughput_target", "text": "Hit greenhouse operational throughput", "weight": 25, "target": 100 },
+                { "id": "e5-energy", "type": "positive_energy", "text": "Keep usable energy positive", "weight": 20, "threshold": 0 },
+                { "id": "e5-eff", "type": "efficiency_ratio", "text": "Reach minimum efficiency ratio", "weight": 25, "target": 0.5 }
+            ]
+        },
+        {
+            "id": "exp-06",
+            "title": "EXP-06: School Microgrid Builder",
+            "tier": 2,
+            "difficulty": "intermediate",
+            "estimatedMinutes": 18,
+            "description": "Supply classrooms and labs with a balanced microgrid.",
+            "learningGoals": [
+                "Support mixed educational loads",
+                "Optimize performance under budget limits"
+            ],
+            "briefing": {
+                "story": "A school is expanding labs and needs dependable clean power.",
+                "task": "Power classroom and lab zones while maintaining efficiency.",
+                "hints": [
+                    "Prioritize both classroom and lab critical roles.",
+                    "Use mixed generation to reduce carbon intensity."
+                ]
+            },
+            "debrief": {
+                "success": "Your microgrid supports learning without downtime.",
+                "improve": "Lower carbon intensity with cleaner generation mix."
+            },
+            "scenario": {
+                "weather": "Variable",
+                "demandSpike": 1.25,
+                "outageWindow": { "enabled": true, "severity": 0.2 },
+                "timeOfDay": "mixed",
+                "efficiencyTarget": 0.53,
+                "carbonTarget": 0.25,
+                "criticalLoadTarget": 0.95,
+                "budgetCap": 700
+            },
+            "unlockRewards": {
+                "badge": "Campus Grid Architect",
+                "unlocks": ["exp-07", "exp-08"]
+            },
+            "passScore": 80,
+            "objectives": [
+                { "id": "e6-classroom", "type": "powered_component", "text": "Power classroom block", "weight": 20, "componentType": "classroomBlock", "minCount": 1 },
+                { "id": "e6-lab", "type": "powered_component", "text": "Power lab bench systems", "weight": 20, "componentType": "labBench", "minCount": 1 },
+                { "id": "e6-critical", "type": "critical_load_uptime", "text": "Maintain school critical uptime", "weight": 25, "target": 0.95 },
+                { "id": "e6-carbon", "type": "carbon_intensity_target", "text": "Keep carbon intensity below target", "weight": 20, "maxTarget": 0.25 },
+                { "id": "e6-eff", "type": "efficiency_ratio", "text": "Meet efficiency target", "weight": 15, "target": 0.53 }
+            ]
+        },
+        {
+            "id": "exp-07",
+            "title": "EXP-07: Flood Early Warning Network",
+            "tier": 3,
+            "difficulty": "advanced",
+            "estimatedMinutes": 18,
+            "description": "Keep flood alert sensors and broadcast tower active through storms.",
+            "learningGoals": [
+                "Engineer resilient alert infrastructure",
+                "Handle harsh scenario modifiers"
+            ],
+            "briefing": {
+                "story": "Rainstorms are intensifying and communities need reliable early warnings.",
+                "task": "Deliver robust power and signaling to sensor relays and alert infrastructure.",
+                "hints": [
+                    "Storm scenarios punish weak reserve and single-source designs.",
+                    "Use monitoring + control roles to validate warning chain."
+                ]
+            },
+            "debrief": {
+                "success": "Your warning network improved flood readiness.",
+                "improve": "Push redundancy higher to withstand severe outages."
+            },
+            "scenario": {
+                "weather": "Storm",
+                "demandSpike": 1.35,
+                "outageWindow": { "enabled": true, "severity": 0.45 },
+                "timeOfDay": "night",
+                "criticalLoadTarget": 0.97,
+                "reserveTarget": 0.72,
+                "budgetCap": 760
+            },
+            "unlockRewards": {
+                "badge": "Resilience Sentinel",
+                "unlocks": ["exp-09"]
+            },
+            "passScore": 82,
+            "objectives": [
+                { "id": "e7-signal", "type": "signal_chain_valid", "text": "Maintain warning signal chain", "weight": 25, "roles": ["sensor", "controller", "alert"] },
+                { "id": "e7-critical", "type": "critical_load_uptime", "text": "Keep warning uptime above 97%", "weight": 30, "target": 0.97 },
+                { "id": "e7-reserve", "type": "runtime_reserve", "text": "Build storm-ready reserve", "weight": 20, "target": 0.72 },
+                { "id": "e7-redundancy", "type": "redundancy_required", "text": "Use at least three generation lines", "weight": 25, "target": 3 }
+            ]
+        },
+        {
+            "id": "exp-08",
+            "title": "EXP-08: EV Charging Pilot Station",
+            "tier": 3,
+            "difficulty": "advanced",
+            "estimatedMinutes": 18,
+            "description": "Serve EV charging loads without destabilizing base community demand.",
+            "learningGoals": [
+                "Balance high-load consumers",
+                "Optimize throughput without brownout"
+            ],
+            "briefing": {
+                "story": "A transport hub launched pilot EV charging and needs stable operations.",
+                "task": "Meet charging throughput while protecting baseline loads.",
+                "hints": [
+                    "EV chargers push demand spikes heavily.",
+                    "Efficiency and reserve both matter under high throughput goals."
+                ]
+            },
+            "debrief": {
+                "success": "Your station handled high charging demand safely.",
+                "improve": "Reduce carbon intensity while maintaining throughput."
+            },
+            "scenario": {
+                "weather": "Clear",
+                "demandSpike": 1.5,
+                "outageWindow": { "enabled": false, "severity": 0.0 },
+                "timeOfDay": "evening",
+                "throughputTarget": 180,
+                "reserveTarget": 0.6,
+                "budgetCap": 780
+            },
+            "unlockRewards": {
+                "badge": "Mobility Planner",
+                "unlocks": ["exp-09"]
+            },
+            "passScore": 83,
+            "objectives": [
+                { "id": "e8-ev", "type": "powered_component", "text": "Power at least two EV chargers", "weight": 25, "componentType": "evCharger", "minCount": 2 },
+                { "id": "e8-throughput", "type": "throughput_target", "text": "Reach EV charging throughput target", "weight": 30, "target": 180 },
+                { "id": "e8-reserve", "type": "runtime_reserve", "text": "Maintain reserve above 0.60", "weight": 20, "target": 0.6 },
+                { "id": "e8-eff", "type": "efficiency_ratio", "text": "Keep efficiency above 0.52", "weight": 25, "target": 0.52 }
+            ]
+        },
+        {
+            "id": "exp-09",
+            "title": "EXP-09: Waste-to-Energy Demonstrator",
+            "tier": 3,
+            "difficulty": "advanced",
+            "estimatedMinutes": 20,
+            "description": "Blend dispatchable and renewable generation while managing emissions.",
+            "learningGoals": [
+                "Coordinate hybrid generation",
+                "Trade off reliability and carbon intensity"
+            ],
+            "briefing": {
+                "story": "The city is testing a waste-to-energy system alongside renewables.",
+                "task": "Achieve reliable output without crossing carbon limits.",
+                "hints": [
+                    "Dispatchable generators increase reliability but can raise carbon intensity.",
+                    "Use clean generation to offset higher-carbon components."
+                ]
+            },
+            "debrief": {
+                "success": "Your hybrid design balanced resilience and sustainability.",
+                "improve": "Lower emissions further while preserving redundancy."
+            },
+            "scenario": {
+                "weather": "Mixed Front",
+                "demandSpike": 1.35,
+                "outageWindow": { "enabled": true, "severity": 0.3 },
+                "timeOfDay": "mixed",
+                "carbonTarget": 0.22,
+                "criticalLoadTarget": 0.94,
+                "budgetCap": 820
+            },
+            "unlockRewards": {
+                "badge": "Hybrid Systems Engineer",
+                "unlocks": ["exp-10"]
+            },
+            "passScore": 85,
+            "objectives": [
+                { "id": "e9-hybrid", "type": "redundancy_required", "text": "Run at least four generation units", "weight": 20, "target": 4 },
+                { "id": "e9-carbon", "type": "carbon_intensity_target", "text": "Keep carbon intensity under 0.22", "weight": 30, "maxTarget": 0.22 },
+                { "id": "e9-critical", "type": "critical_load_uptime", "text": "Maintain reliability above 94%", "weight": 25, "target": 0.94 },
+                { "id": "e9-energy", "type": "positive_energy", "text": "Maintain positive usable energy", "weight": 25, "threshold": 0 }
+            ]
+        },
+        {
+            "id": "exp-10",
+            "title": "EXP-10: Smart District Resilience Final",
+            "tier": 3,
+            "difficulty": "advanced",
+            "estimatedMinutes": 24,
+            "description": "Design a district-scale system that survives multi-event stress.",
+            "learningGoals": [
+                "Apply end-to-end systems thinking",
+                "Optimize reliability, efficiency, budget, and emissions together"
+            ],
+            "briefing": {
+                "story": "A full smart district is launching and your team must certify grid resilience.",
+                "task": "Deliver a balanced architecture that handles stress events without failure.",
+                "hints": [
+                    "Strong final builds combine redundancy, reserve, and clean generation.",
+                    "Do not overspend: budget discipline is part of resilience."
+                ]
+            },
+            "debrief": {
+                "success": "You delivered a district-ready resilient system.",
+                "improve": "Replay to push 3-star mastery across all final metrics."
+            },
+            "scenario": {
+                "weather": "Extreme Mixed",
+                "demandSpike": 1.6,
+                "outageWindow": { "enabled": true, "severity": 0.5 },
+                "timeOfDay": "mixed",
+                "throughputTarget": 220,
+                "reserveTarget": 0.75,
+                "efficiencyTarget": 0.56,
+                "carbonTarget": 0.2,
+                "criticalLoadTarget": 0.97,
+                "budgetCap": 900
+            },
+            "unlockRewards": {
+                "badge": "District Resilience Master",
+                "unlocks": []
+            },
+            "passScore": 88,
+            "objectives": [
+                { "id": "e10-throughput", "type": "throughput_target", "text": "Reach district throughput target", "weight": 20, "target": 220 },
+                { "id": "e10-reserve", "type": "runtime_reserve", "text": "Maintain reserve above 0.75", "weight": 20, "target": 0.75 },
+                { "id": "e10-critical", "type": "critical_load_uptime", "text": "Keep critical uptime above 97%", "weight": 20, "target": 0.97 },
+                { "id": "e10-eff", "type": "efficiency_ratio", "text": "Maintain efficiency ratio above 0.56", "weight": 15, "target": 0.56 },
+                { "id": "e10-carbon", "type": "carbon_intensity_target", "text": "Keep carbon intensity at or below 0.20", "weight": 15, "maxTarget": 0.2 },
+                { "id": "e10-budget", "type": "budget_cap", "text": "Stay under 900 credits spent", "weight": 10, "maxTarget": 900 }
             ]
         }
     ]

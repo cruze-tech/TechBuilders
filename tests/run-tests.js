@@ -1,5 +1,10 @@
 const { runSystemEvaluatorTests } = require('./systemEvaluator.test.js');
 const { runPersistenceTests } = require('./persistence.test.js');
+const { runChallengeRepositoryTests } = require('./challengeRepository.test.js');
+const { runChallengeEvaluatorTests } = require('./challengeEvaluator.test.js');
+const { runProgressionEngineTests } = require('./progressionEngine.test.js');
+const { runTelemetryTests } = require('./telemetry.test.js');
+const { runRouterTests } = require('./router.test.js');
 
 function run(label, testFn) {
     try {
@@ -15,7 +20,12 @@ function run(label, testFn) {
 
 const results = [
     run('SystemEvaluator', runSystemEvaluatorTests),
-    run('Persistence', runPersistenceTests)
+    run('Persistence', runPersistenceTests),
+    run('ChallengeRepository', runChallengeRepositoryTests),
+    run('ChallengeEvaluator', runChallengeEvaluatorTests),
+    run('ProgressionEngine', runProgressionEngineTests),
+    run('Telemetry', runTelemetryTests),
+    run('Router', runRouterTests)
 ];
 
 if (results.every(Boolean)) {

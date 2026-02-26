@@ -1,139 +1,191 @@
 (function (root) {
-    const FALLBACK_CHALLENGES = {
-        schemaVersion: 1,
+    const DEFAULT_INITIAL_BUDGET = typeof GAME_CONFIG !== 'undefined' && GAME_CONFIG && typeof GAME_CONFIG.initialBudget === 'number'
+        ? GAME_CONFIG.initialBudget
+        : 900;
+    const VALID_OBJECTIVE_TYPES = new Set([
+        'positive_energy',
+        'component_presence',
+        'powered_component',
+        'component_count_range',
+        'throughput_target',
+        'runtime_reserve',
+        'redundancy_required',
+        'critical_load_uptime',
+        'efficiency_ratio',
+        'budget_cap',
+        'signal_chain_valid',
+        'carbon_intensity_target'
+    ]);
+
+    const FALLBACK_PAYLOAD = {
+        schemaVersion: 2,
+        campaignTitle: 'Tech Builders Innovation Sprint',
         challenges: [
             {
-                id: 'solar-water-pump',
-                title: 'Solar Water Pump',
-                description: 'Build a pump system powered through a wire network from at least one generator.',
-                passScore: 75,
+                id: 'exp-01',
+                title: 'EXP-01: Solar Irrigation Starter',
+                tier: 1,
+                difficulty: 'starter',
+                estimatedMinutes: 12,
+                description: 'Power a rural irrigation line with reliable daytime output.',
+                learningGoals: ['Balance generation and demand', 'Use wires to power critical loads'],
+                briefing: {
+                    story: 'A farming cooperative needs a stable irrigation setup.',
+                    task: 'Build a compact solar network that keeps the water pump powered.',
+                    hints: ['Connect generation to the pump with wires.', 'Protect your budget.']
+                },
+                debrief: {
+                    success: 'Your system stabilized irrigation.',
+                    improve: 'Increase throughput while keeping costs efficient.'
+                },
+                scenario: {
+                    weather: 'Sunny',
+                    demandSpike: 1,
+                    outageWindow: { enabled: false, severity: 0 },
+                    timeOfDay: 'day',
+                    throughputTarget: 65,
+                    budgetCap: 500
+                },
+                unlockRewards: {
+                    badge: 'Field Starter',
+                    unlocks: []
+                },
+                passScore: 70,
                 objectives: [
-                    {
-                        id: 'positive-energy',
-                        type: 'positive_energy',
-                        weight: 25,
-                        text: 'System has positive usable net energy'
-                    },
-                    {
-                        id: 'solar-required',
-                        type: 'component_presence',
-                        componentType: 'solarPanel',
-                        minCount: 1,
-                        weight: 20,
-                        text: 'At least one solar panel is installed'
-                    },
-                    {
-                        id: 'pump-powered',
-                        type: 'powered_component',
-                        componentType: 'waterPump',
-                        minCount: 1,
-                        weight: 35,
-                        text: 'Water pump is powered through wires'
-                    },
-                    {
-                        id: 'efficient-design',
-                        type: 'component_count_range',
-                        min: 2,
-                        max: 8,
-                        weight: 20,
-                        text: 'Design stays efficient (2 to 8 components)'
-                    }
+                    { id: 'energy', type: 'positive_energy', text: 'Keep usable net energy above zero', weight: 30, threshold: 0 },
+                    { id: 'pump', type: 'powered_component', text: 'Power at least one water pump', weight: 35, componentType: 'waterPump', minCount: 1 },
+                    { id: 'throughput', type: 'throughput_target', text: 'Reach throughput target', weight: 20, target: 65 },
+                    { id: 'budget', type: 'budget_cap', text: 'Stay under budget cap', weight: 15, maxTarget: 500 }
                 ]
             }
         ]
     };
 
-    function normalizeNumber(value, fallback) {
+    function num(value, fallback) {
         return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
     }
 
-    function normalizeObjective(objective, index) {
-        if (!objective || typeof objective !== 'object') {
-            return null;
-        }
-
-        if (typeof objective.id !== 'string' || typeof objective.type !== 'string' || typeof objective.text !== 'string') {
-            return null;
-        }
-
-        const normalized = {
-            id: objective.id,
-            type: objective.type,
-            text: objective.text,
-            weight: normalizeNumber(objective.weight, 0)
-        };
-
-        if (objective.type === 'component_presence' || objective.type === 'powered_component') {
-            if (typeof objective.componentType !== 'string') {
-                return null;
-            }
-            normalized.componentType = objective.componentType;
-            normalized.minCount = Math.max(1, normalizeNumber(objective.minCount, 1));
-        }
-
-        if (objective.type === 'component_count_range') {
-            normalized.min = Math.max(0, normalizeNumber(objective.min, 0));
-            normalized.max = Math.max(normalized.min, normalizeNumber(objective.max, normalized.min));
-        }
-
-        if (objective.type === 'positive_energy') {
-            normalized.threshold = normalizeNumber(objective.threshold, 0);
-        }
-
-        normalized.order = index;
-        return normalized;
+    function arr(value) {
+        return Array.isArray(value) ? value : [];
     }
 
-    function normalizeChallenge(challenge) {
-        if (!challenge || typeof challenge !== 'object') {
+    function normalizeObjective(raw, index) {
+        if (!raw || typeof raw !== 'object') {
             return null;
         }
 
-        if (typeof challenge.id !== 'string' || typeof challenge.title !== 'string' || typeof challenge.description !== 'string') {
+        if (typeof raw.id !== 'string' || typeof raw.text !== 'string' || typeof raw.type !== 'string') {
             return null;
         }
 
-        if (!Array.isArray(challenge.objectives) || challenge.objectives.length === 0) {
+        if (!VALID_OBJECTIVE_TYPES.has(raw.type)) {
             return null;
         }
 
-        const objectives = challenge.objectives
+        return {
+            id: raw.id,
+            type: raw.type,
+            text: raw.text,
+            weight: Math.max(5, num(raw.weight, 10)),
+            componentType: typeof raw.componentType === 'string' ? raw.componentType : null,
+            minCount: Math.max(1, num(raw.minCount, 1)),
+            threshold: num(raw.threshold, 0),
+            min: Math.max(0, num(raw.min, 0)),
+            max: Math.max(0, num(raw.max, 0)),
+            target: Math.max(0, num(raw.target, 0)),
+            maxTarget: Math.max(0, num(raw.maxTarget, 0)),
+            roles: arr(raw.roles).filter((entry) => typeof entry === 'string'),
+            order: index
+        };
+    }
+
+    function normalizeChallenge(raw) {
+        if (!raw || typeof raw !== 'object') {
+            return null;
+        }
+
+        if (typeof raw.id !== 'string' || typeof raw.title !== 'string' || typeof raw.description !== 'string') {
+            return null;
+        }
+
+        const objectives = arr(raw.objectives)
             .map(normalizeObjective)
             .filter(Boolean)
             .sort((a, b) => a.order - b.order);
 
-        if (objectives.length === 0) {
+        if (objectives.length < 4) {
             return null;
         }
 
+        const briefing = raw.briefing || {};
+        const debrief = raw.debrief || {};
+        const scenario = raw.scenario || {};
+        const outageWindow = scenario.outageWindow || {};
+        const unlockRewards = raw.unlockRewards || {};
+
         return {
-            id: challenge.id,
-            title: challenge.title,
-            description: challenge.description,
-            passScore: Math.max(1, normalizeNumber(challenge.passScore, 70)),
+            id: raw.id,
+            title: raw.title,
+            tier: Math.min(3, Math.max(1, num(raw.tier, 1))),
+            difficulty: typeof raw.difficulty === 'string' ? raw.difficulty : 'starter',
+            estimatedMinutes: Math.max(5, num(raw.estimatedMinutes, 10)),
+            description: raw.description,
+            learningGoals: arr(raw.learningGoals).filter((goal) => typeof goal === 'string'),
+            briefing: {
+                story: typeof briefing.story === 'string' ? briefing.story : raw.description,
+                task: typeof briefing.task === 'string' ? briefing.task : 'Complete all objectives.',
+                hints: arr(briefing.hints).filter((hint) => typeof hint === 'string')
+            },
+            debrief: {
+                success: typeof debrief.success === 'string' ? debrief.success : 'Great work.',
+                improve: typeof debrief.improve === 'string' ? debrief.improve : 'Try another strategy.'
+            },
+            scenario: {
+                weather: typeof scenario.weather === 'string' ? scenario.weather : 'Clear',
+                demandSpike: Math.max(0.5, num(scenario.demandSpike, 1)),
+                outageWindow: {
+                    enabled: Boolean(outageWindow.enabled),
+                    severity: Math.min(1, Math.max(0, num(outageWindow.severity, 0)))
+                },
+                timeOfDay: typeof scenario.timeOfDay === 'string' ? scenario.timeOfDay : 'day',
+                throughputTarget: Math.max(0, num(scenario.throughputTarget, 0)),
+                reserveTarget: Math.max(0, num(scenario.reserveTarget, 0)),
+                efficiencyTarget: Math.max(0, num(scenario.efficiencyTarget, 0)),
+                carbonTarget: Math.max(0, num(scenario.carbonTarget, 1)),
+                criticalLoadTarget: Math.max(0, num(scenario.criticalLoadTarget, 0)),
+                budgetCap: Math.max(100, num(scenario.budgetCap, DEFAULT_INITIAL_BUDGET))
+            },
+            unlockRewards: {
+                badge: typeof unlockRewards.badge === 'string' ? unlockRewards.badge : 'Innovator',
+                unlocks: arr(unlockRewards.unlocks).filter((entry) => typeof entry === 'string')
+            },
+            passScore: Math.min(100, Math.max(40, num(raw.passScore, 70))),
             objectives
         };
     }
 
-    function normalizePayload(payload) {
-        if (!payload || typeof payload !== 'object') {
+    function normalizePayload(raw) {
+        if (!raw || typeof raw !== 'object') {
             return null;
         }
 
-        const challenges = Array.isArray(payload.challenges) ? payload.challenges : [];
-        const normalizedChallenges = challenges.map(normalizeChallenge).filter(Boolean);
+        const challenges = arr(raw.challenges)
+            .map(normalizeChallenge)
+            .filter(Boolean)
+            .sort((a, b) => a.tier - b.tier || a.id.localeCompare(b.id));
 
-        if (normalizedChallenges.length === 0) {
+        if (challenges.length === 0) {
             return null;
         }
 
         return {
-            schemaVersion: normalizeNumber(payload.schemaVersion, 1),
-            challenges: normalizedChallenges
+            schemaVersion: Math.max(2, num(raw.schemaVersion, 2)),
+            campaignTitle: typeof raw.campaignTitle === 'string' ? raw.campaignTitle : 'Tech Builders Innovation Sprint',
+            challenges
         };
     }
 
-    async function fetchChallengePayload(url) {
+    async function fetchPayload(url) {
         if (typeof fetch !== 'function') {
             throw new Error('fetch_unavailable');
         }
@@ -148,11 +200,12 @@
 
     async function load(url) {
         const sourceUrl = url || 'data/challenges.json';
+
         try {
-            const payload = await fetchChallengePayload(sourceUrl);
-            const normalized = normalizePayload(payload);
+            const raw = await fetchPayload(sourceUrl);
+            const normalized = normalizePayload(raw);
             if (!normalized) {
-                throw new Error('invalid_schema');
+                throw new Error('invalid_challenge_payload');
             }
             return {
                 ...normalized,
@@ -160,9 +213,9 @@
                 usingFallback: false
             };
         } catch (error) {
-            const fallback = normalizePayload(FALLBACK_CHALLENGES);
+            const normalized = normalizePayload(FALLBACK_PAYLOAD);
             return {
-                ...fallback,
+                ...normalized,
                 source: 'fallback',
                 usingFallback: true,
                 error: error.message
@@ -174,15 +227,31 @@
         if (!payload || !Array.isArray(payload.challenges)) {
             return null;
         }
-
         return payload.challenges.find((challenge) => challenge.id === challengeId) || null;
     }
 
+    function groupByTier(payload) {
+        const grouped = { 1: [], 2: [], 3: [] };
+        if (!payload || !Array.isArray(payload.challenges)) {
+            return grouped;
+        }
+
+        payload.challenges.forEach((challenge) => {
+            if (!grouped[challenge.tier]) {
+                grouped[challenge.tier] = [];
+            }
+            grouped[challenge.tier].push(challenge);
+        });
+        return grouped;
+    }
+
     const ChallengeRepository = {
-        FALLBACK_CHALLENGES,
+        VALID_OBJECTIVE_TYPES,
+        FALLBACK_PAYLOAD,
         normalizePayload,
         load,
-        findById
+        findById,
+        groupByTier
     };
 
     if (typeof module !== 'undefined' && module.exports) {

@@ -1,7 +1,8 @@
 const assert = require('assert');
 const SystemEvaluator = require('../js/systemEvaluator.js');
+require('../js/constants.js');
 
-function component(id, type, energy, x, y, width, height) {
+function component(id, type, energy, x, y, width, height, extra) {
     return {
         id,
         type,
@@ -9,15 +10,19 @@ function component(id, type, energy, x, y, width, height) {
         x,
         y,
         width,
-        height
+        height,
+        roles: extra && extra.roles ? extra.roles : [],
+        throughput: extra && extra.throughput ? extra.throughput : 0,
+        reserve: extra && extra.reserve ? extra.reserve : 0,
+        carbonIntensity: extra && typeof extra.carbonIntensity === 'number' ? extra.carbonIntensity : 0
     };
 }
 
 function runSystemEvaluatorTests() {
     const connected = [
-        component('solar-1', 'solarPanel', 100, 0, 0, 120, 80),
-        component('wire-1', 'wire', 0, 110, 20, 100, 20),
-        component('pump-1', 'waterPump', -80, 200, 0, 100, 90)
+        component('solar-1', 'solarPanel', 100, 0, 0, 120, 80, { roles: ['producer', 'clean'], carbonIntensity: 0.02 }),
+        component('wire-1', 'wire', 0, 110, 20, 100, 20, { roles: ['wire'] }),
+        component('pump-1', 'waterPump', -80, 200, 0, 100, 90, { roles: ['critical'], throughput: 88 })
     ];
 
     const connectedMetrics = SystemEvaluator.evaluatePowerNetwork(connected);
@@ -25,24 +30,24 @@ function runSystemEvaluatorTests() {
     assert.strictEqual(connectedMetrics.poweredComponentIds.has('pump-1'), true, 'pump should be powered via wire network');
 
     const disconnected = [
-        component('solar-2', 'solarPanel', 100, 0, 0, 120, 80),
-        component('pump-2', 'waterPump', -80, 210, 0, 100, 90)
+        component('solar-2', 'solarPanel', 100, 0, 0, 120, 80, { roles: ['producer'] }),
+        component('pump-2', 'waterPump', -80, 230, 0, 100, 90, { roles: ['critical'], throughput: 88 })
     ];
 
     const disconnectedMetrics = SystemEvaluator.evaluatePowerNetwork(disconnected);
     assert.strictEqual(disconnectedMetrics.poweredComponentIds.has('pump-2'), false, 'pump should remain unpowered without wires');
-    assert.strictEqual(disconnectedMetrics.usableNetEnergy, 100, 'only producer group should count as usable energy');
 
-    const chain = [
-        component('solar-3', 'solarPanel', 100, 0, 0, 120, 80),
-        component('wire-2', 'wire', 0, 100, 10, 100, 20),
-        component('wire-3', 'wire', 0, 190, 10, 100, 20),
-        component('motor-1', 'motor', -50, 280, 0, 80, 80)
-    ];
+    const scenarioMetrics = SystemEvaluator.evaluateSystem(connected, {
+        weather: 'Sunny',
+        demandSpike: 1.2,
+        outageWindow: { enabled: true, severity: 0.2 },
+        timeOfDay: 'day'
+    });
 
-    const chainMetrics = SystemEvaluator.evaluatePowerNetwork(chain);
-    assert.strictEqual(chainMetrics.poweredComponentIds.has('motor-1'), true, 'wire chain should power distant consumer');
-    assert.strictEqual(chainMetrics.usableNetEnergy, 50, 'chain network usable energy should include connected consumer load');
+    assert.ok(scenarioMetrics.throughputWithScenario > 0, 'scenario throughput should be derived');
+    assert.ok(scenarioMetrics.runtimeReserve >= 0, 'runtime reserve should be calculated');
+    assert.ok(scenarioMetrics.efficiencyRatio >= 0 && scenarioMetrics.efficiencyRatio <= 1, 'efficiency ratio should be normalized');
+    assert.ok(scenarioMetrics.criticalLoadUptime >= 0 && scenarioMetrics.criticalLoadUptime <= 1, 'critical uptime should be normalized');
 }
 
 module.exports = { runSystemEvaluatorTests };

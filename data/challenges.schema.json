@@ -1,27 +1,111 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Tech Builders Challenge Schema",
+    "title": "Tech Builders Campaign Schema",
     "type": "object",
-    "required": ["schemaVersion", "challenges"],
+    "required": ["schemaVersion", "campaignTitle", "challenges"],
     "properties": {
         "schemaVersion": {
             "type": "number",
-            "minimum": 1
+            "minimum": 2
+        },
+        "campaignTitle": {
+            "type": "string"
         },
         "challenges": {
             "type": "array",
-            "minItems": 1,
+            "minItems": 10,
             "items": {
                 "type": "object",
-                "required": ["id", "title", "description", "passScore", "objectives"],
+                "required": [
+                    "id",
+                    "title",
+                    "tier",
+                    "difficulty",
+                    "estimatedMinutes",
+                    "description",
+                    "learningGoals",
+                    "briefing",
+                    "debrief",
+                    "scenario",
+                    "unlockRewards",
+                    "passScore",
+                    "objectives"
+                ],
                 "properties": {
                     "id": { "type": "string" },
                     "title": { "type": "string" },
+                    "tier": { "type": "number", "minimum": 1, "maximum": 3 },
+                    "difficulty": { "type": "string", "enum": ["starter", "intermediate", "advanced"] },
+                    "estimatedMinutes": { "type": "number", "minimum": 5, "maximum": 60 },
                     "description": { "type": "string" },
-                    "passScore": { "type": "number", "minimum": 1, "maximum": 100 },
+                    "learningGoals": {
+                        "type": "array",
+                        "minItems": 2,
+                        "items": { "type": "string" }
+                    },
+                    "briefing": {
+                        "type": "object",
+                        "required": ["story", "task", "hints"],
+                        "properties": {
+                            "story": { "type": "string" },
+                            "task": { "type": "string" },
+                            "hints": {
+                                "type": "array",
+                                "minItems": 2,
+                                "items": { "type": "string" }
+                            }
+                        }
+                    },
+                    "debrief": {
+                        "type": "object",
+                        "required": ["success", "improve"],
+                        "properties": {
+                            "success": { "type": "string" },
+                            "improve": { "type": "string" }
+                        }
+                    },
+                    "scenario": {
+                        "type": "object",
+                        "required": ["weather", "demandSpike", "outageWindow", "timeOfDay"],
+                        "properties": {
+                            "weather": { "type": "string" },
+                            "demandSpike": { "type": "number", "minimum": 0.5, "maximum": 3.0 },
+                            "outageWindow": {
+                                "type": "object",
+                                "required": ["enabled", "severity"],
+                                "properties": {
+                                    "enabled": { "type": "boolean" },
+                                    "severity": { "type": "number", "minimum": 0, "maximum": 1 }
+                                }
+                            },
+                            "timeOfDay": { "type": "string", "enum": ["day", "evening", "night", "mixed"] },
+                            "throughputTarget": { "type": "number", "minimum": 0 },
+                            "reserveTarget": { "type": "number", "minimum": 0 },
+                            "efficiencyTarget": { "type": "number", "minimum": 0, "maximum": 1 },
+                            "carbonTarget": { "type": "number", "minimum": 0 },
+                            "criticalLoadTarget": { "type": "number", "minimum": 0, "maximum": 1 },
+                            "budgetCap": { "type": "number", "minimum": 100, "maximum": 2000 }
+                        }
+                    },
+                    "unlockRewards": {
+                        "type": "object",
+                        "required": ["badge", "unlocks"],
+                        "properties": {
+                            "badge": { "type": "string" },
+                            "unlocks": {
+                                "type": "array",
+                                "items": { "type": "string" }
+                            }
+                        }
+                    },
+                    "passScore": {
+                        "type": "number",
+                        "minimum": 40,
+                        "maximum": 100
+                    },
                     "objectives": {
                         "type": "array",
-                        "minItems": 1,
+                        "minItems": 4,
                         "items": {
                             "type": "object",
                             "required": ["id", "type", "text", "weight"],
@@ -33,16 +117,30 @@
                                         "positive_energy",
                                         "component_presence",
                                         "powered_component",
-                                        "component_count_range"
+                                        "component_count_range",
+                                        "throughput_target",
+                                        "runtime_reserve",
+                                        "redundancy_required",
+                                        "critical_load_uptime",
+                                        "efficiency_ratio",
+                                        "budget_cap",
+                                        "signal_chain_valid",
+                                        "carbon_intensity_target"
                                     ]
                                 },
                                 "text": { "type": "string" },
-                                "weight": { "type": "number", "minimum": 0, "maximum": 100 },
+                                "weight": { "type": "number", "minimum": 5, "maximum": 50 },
                                 "componentType": { "type": "string" },
                                 "minCount": { "type": "number", "minimum": 1 },
                                 "threshold": { "type": "number" },
                                 "min": { "type": "number", "minimum": 0 },
-                                "max": { "type": "number", "minimum": 0 }
+                                "max": { "type": "number", "minimum": 0 },
+                                "target": { "type": "number", "minimum": 0 },
+                                "maxTarget": { "type": "number", "minimum": 0 },
+                                "roles": {
+                                    "type": "array",
+                                    "items": { "type": "string" }
+                                }
                             }
                         }
                     }

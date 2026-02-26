@@ -1,90 +1,66 @@
-# Tech Builders: The Innovation Hub
+# Tech Builders V2: Innovation Sprint
 
-Tech Builders is an educational engineering game where learners design a solar-powered water pumping system and validate whether it is truly powered through a wire network.
+Tech Builders V2 is a launch-ready educational engineering game for ages 12-18. Players progress through 10 experiments across energy, water, health, transport, and resilience systems.
 
-## What Is New
+## Core Experience
 
-- Connection-based simulation logic (wires are required for powered systems)
-- Objective engine driven by external challenge JSON
-- State store + event bus architecture for maintainable scaling
-- Save data versioning and migration support
-- Responsive UI for desktop and mobile
-- Accessibility upgrades (keyboard controls, focus visibility, live feedback, non-color objective states)
-- Progressive Web App support (manifest, service worker, install prompt, offline cache)
-- Automated tests and CI quality gate
+- 10 campaign experiments with tiered unlock progression
+- Route-driven UI flow: splash, mode, map, briefing, lab, results, progress, about
+- Expanded objective engine with advanced scenario metrics
+- Rich glassmorphism UI, motion, and responsive mobile layout
+- About Tech Builders panel with Cruze Tech links and developer message
+- Local pilot analytics with export/clear controls
+- PWA-ready offline behavior and install prompt
 
-## Project Structure
+## Key Architecture
 
-```
-TechBuilders/
-├── index.html
-├── styles.css
-├── manifest.webmanifest
-├── sw.js
-├── data/
-│   ├── challenges.json
-│   └── challenges.schema.json
-├── assets/icons/
-│   ├── icon-192.svg
-│   └── icon-512.svg
-├── js/
-│   ├── app.js
-│   ├── constants.js
-│   ├── eventBus.js
-│   ├── persistence.js
-│   ├── systemEvaluator.js
-│   ├── challengeRepository.js
-│   ├── utils.js
-│   ├── gameState.js
-│   ├── canvasManager.js
-│   ├── challenge.js
-│   └── simulationEngine.js
-├── tests/
-│   ├── run-tests.js
-│   ├── persistence.test.js
-│   └── systemEvaluator.test.js
-├── scripts/
-│   └── quality-gate.js
-└── .github/workflows/
-    └── ci.yml
-```
+- `js/router.js`: deterministic screen navigation and back behavior
+- `js/progressionEngine.js`: stars, unlocks, tier progress, campaign summaries
+- `js/telemetry.js`: local event tracking and JSON export
+- `js/aboutPage.js`: about content rendering and developer message
+- `js/challengeRepository.js`: schema-aligned challenge parsing
+- `js/challenge.js`: objective evaluation engine
+- `js/systemEvaluator.js`: power + scenario-derived metrics
+- `js/gameState.js`: build, campaign, analytics, and save/load state
 
-## Gameplay Model
+## Data Model
 
-A successful design must satisfy all key objectives:
+`data/challenges.json` now contains 10 experiments with:
 
-1. Positive usable net energy
-2. At least one solar panel
-3. Water pump powered through a wire-connected generation path
-4. Efficient component count (2 to 8)
+- `tier`, `difficulty`, `estimatedMinutes`
+- `learningGoals`, `briefing`, `debrief`
+- `scenario` modifiers (`weather`, `demandSpike`, `outageWindow`, `timeOfDay`, etc.)
+- `unlockRewards`
+- expanded objective types
 
-The score is mastery-based:
+## Objective Types
 
-- The app keeps your best score for a design quality level.
-- Re-running the same unchanged design does not farm points.
-
-## Controls
-
-- Click component cards to place parts
-- Drag placed components to move
-- `R` rotates selected component
-- `Delete` removes selected component
+- `positive_energy`
+- `component_presence`
+- `powered_component`
+- `component_count_range`
+- `throughput_target`
+- `runtime_reserve`
+- `redundancy_required`
+- `critical_load_uptime`
+- `efficiency_ratio`
+- `budget_cap`
+- `signal_chain_valid`
+- `carbon_intensity_target`
 
 ## Running Locally
 
-For full PWA behavior (service worker + install), run from a local web server:
+Use a local static server for full PWA behavior:
 
 ```bash
 python3 -m http.server 8080
 ```
 
-Then open `http://localhost:8080`.
+Open `http://localhost:8080`.
 
-Direct `file://` opening still works for core gameplay, but challenge loading may use built-in fallback definitions.
+## Tests
 
-## Testing and Quality Gates
-
-Run tests:
+Run all tests:
 
 ```bash
 node tests/run-tests.js
@@ -96,14 +72,10 @@ Run quality gate:
 node scripts/quality-gate.js
 ```
 
-## Scaling Readiness Notes
+## Cruze Tech
 
-The app now supports scalable content and architecture foundations:
-
-- Decoupled modules through a store/event bus
-- Data-driven challenges via schema-guided JSON
-- Versioned persistence for future migrations
-- CI guardrails for regressions in core readiness criteria
+- https://cruze-tech.com
+- https://games.cruze-tech.com
 
 ## License
 

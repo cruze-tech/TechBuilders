@@ -1,13 +1,13 @@
 {
-    "name": "Tech Builders: The Innovation Hub",
+    "name": "Tech Builders V2: Innovation Sprint",
     "short_name": "TechBuilders",
-    "description": "Educational engineering game focused on power systems, wiring logic, and iterative design.",
+    "description": "Educational engineering campaign game with 10 experiments, tiered progression, and local pilot analytics.",
     "start_url": "./",
     "scope": "./",
     "display": "standalone",
-    "orientation": "landscape-primary",
-    "background_color": "#123a5f",
-    "theme_color": "#1a3f66",
+    "orientation": "any",
+    "background_color": "#132f53",
+    "theme_color": "#132f53",
     "icons": [
         {
             "src": "assets/icons/icon-192.svg",

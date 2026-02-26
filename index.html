@@ -3,157 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#1a3f66">
-    <title>Tech Builders: The Innovation Hub</title>
+    <meta name="theme-color" content="#132f53">
+    <title>Tech Builders V2: Innovation Sprint</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="assets/icons/icon-192.svg" type="image/svg+xml">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="offlineBanner" class="offline-banner" role="status" aria-live="polite" hidden>
-        Offline mode: gameplay works with cached assets. New saves stay on this device.
+        Offline mode active. Cached gameplay is available.
     </div>
 
-    <div class="menu-screen active" id="menuScreen" aria-labelledby="menuTitle">
-        <div class="menu-content">
-            <h1 class="menu-title" id="menuTitle">Tech Builders</h1>
-            <p class="menu-subtitle">The Innovation Hub</p>
-            <div class="menu-buttons">
-                <button class="btn btn-primary btn-large" id="startGameBtn" type="button">Start Game</button>
-                <button class="btn btn-secondary btn-large" id="menuHelpBtn" type="button">How to Play</button>
-                <button class="btn btn-secondary btn-large" id="installBtn" type="button" hidden>Install App</button>
+    <main class="app-shell" aria-live="polite">
+        <section id="splashScreen" class="screen screen-active" aria-labelledby="splashTitle">
+            <div class="hero-orb hero-orb-a"></div>
+            <div class="hero-orb hero-orb-b"></div>
+            <div class="glass-card splash-card">
+                <h1 id="splashTitle" class="hero-title">Tech Builders V2</h1>
+                <p class="hero-subtitle">Innovation Sprint</p>
+                <p class="hero-description">Build real-world systems across 10 experiments in energy, water, health, transport, and resilience.</p>
+                <button id="enterModeBtn" class="btn btn-primary btn-lg" type="button">Enter Experience</button>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <div class="help-screen" id="helpScreen" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-        <div class="help-content">
-            <h2 class="help-title" id="helpTitle">How to Play</h2>
-
-            <section class="help-section">
-                <h3 class="help-section-title">Objective</h3>
-                <p>Design a solar-powered water pumping system for rural communities. Your pump must be powered through wires from a generation source.</p>
-            </section>
-
-            <section class="help-section">
-                <h3 class="help-section-title">Budget and Resources</h3>
-                <ul class="help-list">
-                    <li>Start with 500 credits to spend on components.</li>
-                    <li>Each component has a cost shown in the component library.</li>
-                    <li>Your best validated score is saved as your mastery score.</li>
-                </ul>
-            </section>
-
-            <section class="help-section">
-                <h3 class="help-section-title">Components</h3>
-                <ul class="help-list">
-                    <li><strong>Solar Panel:</strong> Generates 100W (80 credits)</li>
-                    <li><strong>Motor:</strong> Consumes 50W (60 credits)</li>
-                    <li><strong>Water Pump:</strong> Consumes 80W (100 credits)</li>
-                    <li><strong>Battery:</strong> Supplies 60W (70 credits)</li>
-                    <li><strong>Gear:</strong> Mechanical support component (30 credits)</li>
-                    <li><strong>Wire:</strong> Forms electrical connections (10 credits)</li>
-                </ul>
-            </section>
-
-            <section class="help-section">
-                <h3 class="help-section-title">Controls</h3>
-                <ul class="help-list">
-                    <li><strong>Click Component:</strong> Place on canvas</li>
-                    <li><strong>Drag Component:</strong> Move on canvas</li>
-                    <li><strong>R:</strong> Rotate selected component</li>
-                    <li><strong>Delete:</strong> Remove selected component</li>
-                </ul>
-            </section>
-
-            <section class="help-section">
-                <h3 class="help-section-title">Success Criteria</h3>
-                <ul class="help-list">
-                    <li>System has positive usable net energy.</li>
-                    <li>At least one solar panel is present.</li>
-                    <li>The water pump is powered through the wire network.</li>
-                    <li>Design remains efficient (2 to 8 components).</li>
-                </ul>
-            </section>
-
-            <div class="help-buttons">
-                <button class="btn btn-secondary" id="helpBackBtn" type="button">Back to Menu</button>
-                <button class="btn btn-primary" id="helpStartBtn" type="button">Start Game</button>
-            </div>
-        </div>
-    </div>
-
-    <main id="gameScreen" class="game-screen" hidden>
-        <header class="top-bar">
-            <h2 class="game-title">Tech Builders: The Innovation Hub</h2>
-            <div class="stats-display" aria-label="Game stats">
-                <div class="stat-item">
-                    <span aria-hidden="true">Credits</span>
-                    <strong id="budgetDisplay">500</strong>
-                </div>
-                <div class="stat-item">
-                    <span aria-hidden="true">Usable Energy</span>
-                    <strong id="energyDisplay">0</strong>W
-                </div>
-                <div class="stat-item">
-                    <span aria-hidden="true">Mastery Score</span>
-                    <strong id="pointsDisplay">0</strong>/100
+        <section id="modeScreen" class="screen" aria-labelledby="modeTitle">
+            <div class="glass-card mode-card">
+                <h2 id="modeTitle">Choose Your Path</h2>
+                <p>Playful, hands-on engineering for ages 12-18.</p>
+                <div class="menu-grid">
+                    <button id="startCampaignBtn" class="btn btn-primary" type="button">Start Campaign</button>
+                    <button id="continueCampaignBtn" class="btn btn-secondary" type="button">Continue</button>
+                    <button id="howToPlayBtn" class="btn btn-secondary" type="button">How To Play</button>
+                    <button id="aboutBtn" class="btn btn-secondary" type="button">About Tech Builders</button>
+                    <button id="installBtn" class="btn btn-secondary" type="button" hidden>Install App</button>
                 </div>
             </div>
-            <button class="btn btn-secondary top-menu-btn" id="menuBtn" type="button">Menu</button>
-        </header>
+        </section>
 
-        <div class="game-container">
-            <aside class="sidebar" aria-label="Component library">
-                <h3 class="section-title">Components</h3>
-                <div class="component-grid" id="componentLibrary"></div>
-            </aside>
-
-            <section class="canvas-area" aria-label="Design workspace">
-                <svg id="buildCanvas" viewBox="0 0 1000 700" role="img" aria-label="Canvas used to arrange components"></svg>
-            </section>
-
-            <aside class="right-panel" aria-label="Challenge details and controls">
-                <div class="challenge-box">
-                    <h3 class="challenge-title" id="challengeTitle">Solar Water Pump</h3>
-                    <p class="challenge-desc" id="challengeDesc">Design a solar-powered water pumping system for rural communities.</p>
-                    <h4 class="section-title">Objectives</h4>
-                    <ul class="objectives-list" id="objectivesList" aria-live="polite"></ul>
+        <section id="helpScreen" class="screen" aria-labelledby="helpTitle">
+            <div class="glass-card modal-card">
+                <h2 id="helpTitle">How To Play</h2>
+                <ul class="help-list">
+                    <li>Select an experiment from the tiered map.</li>
+                    <li>Read the briefing and scenario constraints.</li>
+                    <li>Build with components in the lab and run simulation.</li>
+                    <li>Pass objectives to earn stars and unlock higher tiers.</li>
+                    <li>Use hints if needed. Hints are tracked for pilot insights.</li>
+                </ul>
+                <div class="modal-actions">
+                    <button id="helpBackBtn" class="btn btn-secondary" type="button">Back</button>
                 </div>
+            </div>
+        </section>
 
-                <div class="controls">
-                    <button class="btn btn-primary" id="runSimBtn" type="button">Run Test</button>
-                    <button class="btn btn-secondary" id="stopSimBtn" type="button" disabled>Stop</button>
+        <section id="mapScreen" class="screen" aria-labelledby="mapTitle">
+            <header class="screen-header">
+                <h2 id="mapTitle">Experiment Map</h2>
+                <div class="header-actions">
+                    <button id="mapToModeBtn" class="btn btn-secondary" type="button">Main Menu</button>
+                    <button id="mapToProgressBtn" class="btn btn-secondary" type="button">Progress</button>
+                    <button id="mapToAboutBtn" class="btn btn-secondary" type="button">About</button>
                 </div>
+            </header>
+            <div class="tier-map" id="tierMap" aria-label="Tiered experiment map"></div>
+        </section>
 
-                <div class="controls controls-secondary">
-                    <button class="btn btn-secondary" id="saveBtn" type="button">Save</button>
-                    <button class="btn btn-secondary" id="loadBtn" type="button">Load</button>
-                    <button class="btn btn-danger" id="clearBtn" type="button">Clear</button>
+        <section id="briefingScreen" class="screen" aria-labelledby="briefTitle">
+            <div class="glass-card briefing-card">
+                <h2 id="briefTitle"></h2>
+                <p id="briefDescription" class="brief-description"></p>
+                <div class="brief-meta" id="briefMeta"></div>
+                <div class="brief-columns">
+                    <article class="brief-block">
+                        <h3>Mission Story</h3>
+                        <p id="briefStory"></p>
+                    </article>
+                    <article class="brief-block">
+                        <h3>Task</h3>
+                        <p id="briefTask"></p>
+                    </article>
+                    <article class="brief-block">
+                        <h3>Learning Goals</h3>
+                        <ul id="briefLearningGoals"></ul>
+                    </article>
+                    <article class="brief-block">
+                        <h3>Scenario</h3>
+                        <ul id="briefScenario"></ul>
+                    </article>
+                    <article class="brief-block">
+                        <h3>Hints</h3>
+                        <ul id="briefHints"></ul>
+                    </article>
                 </div>
+                <div class="modal-actions">
+                    <button id="briefBackBtn" class="btn btn-secondary" type="button">Back To Map</button>
+                    <button id="briefStartBtn" class="btn btn-primary" type="button">Start Experiment</button>
+                </div>
+            </div>
+        </section>
 
-                <div class="feedback-panel">
-                    <h4 class="feedback-title">System Feedback</h4>
-                    <div id="feedbackMessages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+        <section id="labScreen" class="screen" aria-labelledby="labTitle">
+            <header class="top-bar">
+                <div>
+                    <h2 id="labTitle" class="game-title">Build Lab</h2>
+                    <p id="labSubtitle" class="lab-subtitle">Configure your system and pass all objectives.</p>
                 </div>
-            </aside>
-        </div>
+                <div class="stats-display" aria-label="Game stats">
+                    <div class="stat-item"><span>Credits</span><strong id="budgetDisplay">900</strong></div>
+                    <div class="stat-item"><span>Usable Energy</span><strong id="energyDisplay">0</strong>W</div>
+                    <div class="stat-item"><span>Mastery</span><strong id="pointsDisplay">0</strong>/100</div>
+                </div>
+                <div class="header-actions compact-actions">
+                    <button id="labToMapBtn" class="btn btn-secondary" type="button">Map</button>
+                    <button id="labToProgressBtn" class="btn btn-secondary" type="button">Progress</button>
+                    <button id="labToAboutBtn" class="btn btn-secondary" type="button">About</button>
+                </div>
+            </header>
+
+            <div class="game-container">
+                <aside class="sidebar" aria-label="Component Library">
+                    <h3 class="section-title">Components</h3>
+                    <div id="componentFilters" class="component-filters" aria-label="Component category filters"></div>
+                    <div class="component-grid" id="componentLibrary"></div>
+                </aside>
+
+                <section class="canvas-area" aria-label="Design workspace">
+                    <svg id="buildCanvas" viewBox="0 0 1200 760" role="img" aria-label="Canvas for placing engineering components"></svg>
+                </section>
+
+                <aside class="right-panel" aria-label="Challenge objectives and controls">
+                    <div class="challenge-box">
+                        <h3 class="challenge-title" id="challengeTitle"></h3>
+                        <p class="challenge-desc" id="challengeDesc"></p>
+                        <h4 class="section-title">Objectives</h4>
+                        <ul class="objectives-list" id="objectivesList"></ul>
+                    </div>
+
+                    <div class="scenario-panel" id="scenarioPanel"></div>
+
+                    <div class="controls">
+                        <button id="runSimBtn" class="btn btn-primary" type="button">Run Simulation</button>
+                        <button id="stopSimBtn" class="btn btn-secondary" type="button" disabled>Stop</button>
+                    </div>
+                    <div class="controls controls-secondary">
+                        <button id="saveBtn" class="btn btn-secondary" type="button">Save</button>
+                        <button id="loadBtn" class="btn btn-secondary" type="button">Load</button>
+                        <button id="clearBtn" class="btn btn-danger" type="button">Clear</button>
+                    </div>
+                    <div class="controls controls-secondary">
+                        <button id="hintBtn" class="btn btn-secondary" type="button">Use Hint</button>
+                    </div>
+
+                    <div class="feedback-panel">
+                        <h4 class="feedback-title">System Feedback</h4>
+                        <div id="feedbackMessages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section id="resultsScreen" class="screen" aria-labelledby="resultsTitle">
+            <div class="glass-card result-card">
+                <h2 id="resultsTitle">Simulation Results</h2>
+                <p id="resultExperimentTitle" class="result-experiment"></p>
+                <div id="resultScore" class="result-score">0</div>
+                <div id="resultStars" class="result-stars" aria-label="Star rating"></div>
+                <p id="resultNarrative" class="result-narrative"></p>
+                <div id="resultFeedback" class="result-feedback"></div>
+                <div class="modal-actions">
+                    <button id="resultRetryBtn" class="btn btn-secondary" type="button">Retry Experiment</button>
+                    <button id="resultNextBtn" class="btn btn-primary" type="button">Next Experiment</button>
+                    <button id="resultMapBtn" class="btn btn-secondary" type="button">Back To Map</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="progressScreen" class="screen" aria-labelledby="progressTitle">
+            <div class="glass-card progress-card">
+                <h2 id="progressTitle">Progress Summary</h2>
+                <div id="progressSummary" class="progress-summary"></div>
+                <div id="tierProgress" class="tier-progress"></div>
+                <div id="badgesPanel" class="badges-panel"></div>
+                <div class="modal-actions">
+                    <button id="progressBackBtn" class="btn btn-secondary" type="button">Back</button>
+                    <button id="exportTelemetryBtn" class="btn btn-secondary" type="button">Export Pilot Data</button>
+                    <button id="clearTelemetryBtn" class="btn btn-danger" type="button">Clear Pilot Data</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="aboutScreen" class="screen" aria-labelledby="aboutTitle">
+            <div class="glass-card about-wrapper">
+                <div id="aboutContent"></div>
+                <div class="modal-actions">
+                    <button id="aboutBackBtn" class="btn btn-secondary" type="button">Back</button>
+                </div>
+            </div>
+        </section>
     </main>
-
-    <div class="modal" id="successModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <div class="modal-content">
-            <h3 class="modal-title" id="modalTitle">Challenge Complete</h3>
-            <div class="modal-score" id="modalScore">95/100</div>
-            <p id="modalMessage">Excellent work!</p>
-            <button class="btn btn-primary" id="closeModalBtn" type="button">Continue Building</button>
-        </div>
-    </div>
 
     <script src="js/constants.js"></script>
     <script src="js/eventBus.js"></script>
     <script src="js/persistence.js"></script>
     <script src="js/systemEvaluator.js"></script>
     <script src="js/challengeRepository.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/progressionEngine.js"></script>
+    <script src="js/telemetry.js"></script>
+    <script src="js/aboutPage.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/gameState.js"></script>
     <script src="js/canvasManager.js"></script>

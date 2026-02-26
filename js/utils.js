@@ -10,99 +10,41 @@
         entry.textContent = message;
 
         feedbackContainer.prepend(entry);
-
-        while (feedbackContainer.children.length > 20) {
+        while (feedbackContainer.children.length > 30) {
             feedbackContainer.removeChild(feedbackContainer.lastChild);
         }
     }
 
-    function showSuccessModal(score, passScore) {
-        const modal = document.getElementById('successModal');
-        if (!modal) {
-            return;
-        }
-
-        const roundedScore = Math.round(score);
-        const scoreElement = document.getElementById('modalScore');
-        const messageElement = document.getElementById('modalMessage');
-
-        if (scoreElement) {
-            scoreElement.textContent = `${roundedScore}/100`;
-        }
-
-        if (messageElement) {
-            if (roundedScore >= 90) {
-                messageElement.textContent = `Outstanding system design. You exceeded the pass target of ${passScore}.`;
-            } else if (roundedScore >= passScore) {
-                messageElement.textContent = `Challenge passed. Keep refining for a higher mastery score.`;
-            } else {
-                messageElement.textContent = `Keep iterating to pass the ${passScore}-point threshold.`;
-            }
-        }
-
-        modal.style.display = 'flex';
-    }
-
-    function closeModal() {
-        const modal = document.getElementById('successModal');
-        if (modal) {
-            modal.style.display = 'none';
+    function clearFeedback() {
+        const feedbackContainer = document.getElementById('feedbackMessages');
+        if (feedbackContainer) {
+            feedbackContainer.innerHTML = '';
         }
     }
 
-    function showMenuScreen() {
-        const menu = document.getElementById('menuScreen');
-        const game = document.getElementById('gameScreen');
-        if (menu) {
-            menu.classList.add('active');
-        }
-        if (game) {
-            game.hidden = true;
-        }
+    function downloadJson(filename, payload) {
+        const json = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
     }
 
-    function hideMenuScreen() {
-        const menu = document.getElementById('menuScreen');
-        const game = document.getElementById('gameScreen');
-        if (menu) {
-            menu.classList.remove('active');
-        }
-        if (game) {
-            game.hidden = false;
-        }
-    }
-
-    function showHelpScreen() {
-        const help = document.getElementById('helpScreen');
-        if (help) {
-            help.classList.add('active');
-        }
-    }
-
-    function hideHelpScreen() {
-        const help = document.getElementById('helpScreen');
-        if (help) {
-            help.classList.remove('active');
-        }
-    }
+    const Utils = {
+        addFeedback,
+        clearFeedback,
+        downloadJson
+    };
 
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = {
-            addFeedback,
-            showSuccessModal,
-            closeModal,
-            showMenuScreen,
-            hideMenuScreen,
-            showHelpScreen,
-            hideHelpScreen
-        };
+        module.exports = Utils;
     }
 
     root.addFeedback = addFeedback;
-    root.showSuccessModal = showSuccessModal;
-    root.closeModal = closeModal;
-    root.showMenuScreen = showMenuScreen;
-    root.hideMenuScreen = hideMenuScreen;
-    root.showHelpScreen = showHelpScreen;
-    root.hideHelpScreen = hideHelpScreen;
+    root.clearFeedback = clearFeedback;
+    root.downloadJson = downloadJson;
 })(typeof window !== 'undefined' ? window : globalThis);

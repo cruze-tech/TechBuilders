@@ -1,47 +1,63 @@
 (function (root) {
     class SimulationEngine {
-        constructor(store, challenge) {
+        constructor(store) {
             this.store = store;
-            this.challenge = challenge;
+            this.challenge = null;
             this.running = false;
             this.timerId = null;
+            this.lastResult = null;
         }
 
-        start() {
+        setChallenge(challenge) {
+            this.challenge = challenge;
+        }
+
+        start(options) {
+            const opts = options || {};
+            const duration = typeof opts.durationMs === 'number' ? opts.durationMs : GAME_CONFIG.defaultSimulationDurationMs;
+            const onComplete = typeof opts.onComplete === 'function' ? opts.onComplete : null;
+
+            if (!this.challenge) {
+                addFeedback('Select an experiment before running simulation.', 'warning');
+                return false;
+            }
+
             const state = this.store.getState();
             if (this.running || state.isSimulating) {
-                return;
+                return false;
             }
 
             if (state.components.length === 0) {
-                addFeedback('Place at least one component before running a test.', 'error');
-                return;
+                addFeedback('Place at least one component before simulation.', 'error');
+                return false;
             }
 
             this.running = true;
             this.store.setSimulating(true);
-            addFeedback('Simulation running. Evaluating system integrity...', 'info');
+            addFeedback('Simulation running. Testing system resilience...', 'info');
 
             this.timerId = setTimeout(() => {
                 this.timerId = null;
-                this.finishRun();
-            }, 3000);
+                this.finishRun(onComplete);
+            }, Math.max(1200, duration));
+
+            return true;
         }
 
-        finishRun() {
+        finishRun(onComplete) {
             if (!this.running) {
                 return;
             }
 
             this.running = false;
             this.store.setSimulating(false);
-            this.evaluate(true);
+            const result = this.evaluate(true);
+            if (onComplete) {
+                onComplete(result);
+            }
         }
 
-        stop(options) {
-            const opts = options || {};
-            const manual = opts.manual !== false;
-
+        stop(manual) {
             if (this.timerId) {
                 clearTimeout(this.timerId);
                 this.timerId = null;
@@ -54,41 +70,47 @@
             this.running = false;
             this.store.setSimulating(false);
 
-            if (manual) {
+            if (manual !== false) {
                 addFeedback('Simulation stopped before scoring.', 'warning');
             }
         }
 
         evaluate(commitScore) {
+            if (!this.challenge) {
+                return null;
+            }
+
             const state = this.store.getState();
-            const metrics = state.metrics || SystemEvaluator.evaluatePowerNetwork(state.components);
+            const metrics = SystemEvaluator.evaluateSystem(state.components, this.challenge.scenario);
             const result = this.challenge.evaluate(state, metrics);
 
             this.challenge.updateObjectiveUI(result.objectiveResults);
             this.store.setObjectiveResults(result.objectiveResults);
 
             if (!commitScore) {
+                this.lastResult = result;
                 return result;
             }
 
+            this.store.recordSimulationRun(result.passed);
             result.feedback.forEach((entry) => {
                 addFeedback(entry.message, entry.type);
             });
 
             const scoreApplication = this.store.applySimulationScore(result.score, state.designVersion);
             if (scoreApplication.alreadyScored) {
-                addFeedback('Design unchanged since last scored run. Score was not added again.', 'warning');
+                addFeedback('Unchanged build detected. Improve design to raise mastery.', 'warning');
             } else {
-                addFeedback(`Mastery score updated to ${scoreApplication.points}/100.`, 'success');
+                addFeedback(`Simulation score recorded: ${scoreApplication.score}/100.`, 'success');
             }
 
-            if (result.passed) {
-                showSuccessModal(result.score, result.passScore);
-            } else {
-                addFeedback(`Result: ${result.score}/${result.passScore} required to pass.`, 'info');
-            }
+            this.lastResult = {
+                ...result,
+                metrics,
+                scoreApplication
+            };
 
-            return result;
+            return this.lastResult;
         }
 
         previewObjectives() {

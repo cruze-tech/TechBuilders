@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'tech-builders-v2';
+const CACHE_VERSION = 'tech-builders-v3';
 const APP_SHELL_CACHE = `app-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 
@@ -16,6 +16,10 @@ const APP_SHELL_ASSETS = [
     './js/persistence.js',
     './js/systemEvaluator.js',
     './js/challengeRepository.js',
+    './js/router.js',
+    './js/progressionEngine.js',
+    './js/telemetry.js',
+    './js/aboutPage.js',
     './js/utils.js',
     './js/gameState.js',
     './js/canvasManager.js',
@@ -36,10 +40,11 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keys) => {
-            const deletions = keys
-                .filter((key) => ![APP_SHELL_CACHE, RUNTIME_CACHE].includes(key))
-                .map((key) => caches.delete(key));
-            return Promise.all(deletions);
+            return Promise.all(
+                keys
+                    .filter((key) => ![APP_SHELL_CACHE, RUNTIME_CACHE].includes(key))
+                    .map((key) => caches.delete(key))
+            );
         }).then(() => self.clients.claim())
     );
 });
@@ -50,8 +55,8 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    const requestUrl = new URL(request.url);
-    const isSameOrigin = requestUrl.origin === self.location.origin;
+    const url = new URL(request.url);
+    const sameOrigin = url.origin === self.location.origin;
 
     if (request.mode === 'navigate') {
         event.respondWith(
@@ -66,7 +71,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    if (!isSameOrigin) {
+    if (!sameOrigin) {
         return;
     }
 
@@ -81,7 +86,6 @@ self.addEventListener('fetch', (event) => {
                     if (!response || response.status !== 200) {
                         return response;
                     }
-
                     const copy = response.clone();
                     caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy));
                     return response;
