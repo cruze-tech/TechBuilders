@@ -34,6 +34,8 @@ assertRule(failures, 'About screen exists', () => /id="aboutScreen"/.test(indexH
 assertRule(failures, 'Map screen exists', () => /id="mapScreen"/.test(indexHtml));
 assertRule(failures, 'Results screen exists', () => /id="resultsScreen"/.test(indexHtml));
 assertRule(failures, 'Progress screen exists', () => /id="progressScreen"/.test(indexHtml));
+assertRule(failures, 'Lab tabbed panels exist', () => /id="panelTabObjectives"/.test(indexHtml) && /id="panelTabScenario"/.test(indexHtml) && /id="panelTabFeedback"/.test(indexHtml));
+assertRule(failures, 'Achievement PNG export controls exist', () => /id="achievementNameInput"/.test(indexHtml) && /id="exportAchievementBtn"/.test(indexHtml));
 assertRule(failures, 'Cruze links are present', () => /cruze-tech\.com/.test(indexHtml) || /cruze-tech\.com/.test(read('js/aboutPage.js')));
 
 assertRule(failures, 'Service worker registration present', () => /serviceWorker\.register\('sw\.js'\)/.test(appJs));

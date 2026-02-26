@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#132f53">
-    <title>Tech Builders V2: Innovation Sprint</title>
+    <title>Tech Builders: Innovation Sprint</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="assets/icons/icon-192.svg" type="image/svg+xml">
     <link rel="stylesheet" href="styles.css">
@@ -19,7 +19,7 @@
             <div class="hero-orb hero-orb-a"></div>
             <div class="hero-orb hero-orb-b"></div>
             <div class="glass-card splash-card">
-                <h1 id="splashTitle" class="hero-title">Tech Builders V2</h1>
+                <h1 id="splashTitle" class="hero-title">Tech Builders</h1>
                 <p class="hero-subtitle">Innovation Sprint</p>
                 <p class="hero-description">Build real-world systems across 10 experiments in energy, water, health, transport, and resilience.</p>
                 <button id="enterModeBtn" class="btn btn-primary btn-lg" type="button">Enter Experience</button>
@@ -132,14 +132,14 @@
                 </section>
 
                 <aside class="right-panel" aria-label="Challenge objectives and controls">
-                    <div class="challenge-box">
-                        <h3 class="challenge-title" id="challengeTitle"></h3>
-                        <p class="challenge-desc" id="challengeDesc"></p>
-                        <h4 class="section-title">Objectives</h4>
-                        <ul class="objectives-list" id="objectivesList"></ul>
+                    <div class="lab-flow-card">
+                        <h3 class="section-title">Quick Steps</h3>
+                        <ol class="quick-steps" aria-label="Gameplay flow">
+                            <li id="quickStepBuild">Build your system with components from the library.</li>
+                            <li id="quickStepBalance">Balance energy, budget, and scenario constraints.</li>
+                            <li id="quickStepRun">Run simulation and improve from feedback.</li>
+                        </ol>
                     </div>
-
-                    <div class="scenario-panel" id="scenarioPanel"></div>
 
                     <div class="controls">
                         <button id="runSimBtn" class="btn btn-primary" type="button">Run Simulation</button>
@@ -154,10 +154,31 @@
                         <button id="hintBtn" class="btn btn-secondary" type="button">Use Hint</button>
                     </div>
 
-                    <div class="feedback-panel">
-                        <h4 class="feedback-title">System Feedback</h4>
-                        <div id="feedbackMessages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+                    <div class="panel-tabs" role="tablist" aria-label="Lab panels">
+                        <button id="panelTabObjectives" class="panel-tab panel-tab-active" type="button" role="tab" aria-controls="panelObjectives" aria-selected="true" data-panel="objectives">Objectives</button>
+                        <button id="panelTabScenario" class="panel-tab" type="button" role="tab" aria-controls="panelScenario" aria-selected="false" data-panel="scenario">Scenario</button>
+                        <button id="panelTabFeedback" class="panel-tab" type="button" role="tab" aria-controls="panelFeedback" aria-selected="false" data-panel="feedback">Feedback</button>
                     </div>
+
+                    <section id="panelObjectives" class="panel-view panel-active" role="tabpanel" aria-labelledby="panelTabObjectives">
+                        <div class="challenge-box">
+                            <h3 class="challenge-title" id="challengeTitle"></h3>
+                            <p class="challenge-desc" id="challengeDesc"></p>
+                            <h4 class="section-title">Objectives</h4>
+                            <ul class="objectives-list" id="objectivesList"></ul>
+                        </div>
+                    </section>
+
+                    <section id="panelScenario" class="panel-view" role="tabpanel" aria-labelledby="panelTabScenario" hidden>
+                        <div class="scenario-panel" id="scenarioPanel"></div>
+                    </section>
+
+                    <section id="panelFeedback" class="panel-view" role="tabpanel" aria-labelledby="panelTabFeedback" hidden>
+                        <div class="feedback-panel">
+                            <h4 class="feedback-title">System Feedback</h4>
+                            <div id="feedbackMessages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+                        </div>
+                    </section>
                 </aside>
             </div>
         </section>
@@ -184,6 +205,15 @@
                 <div id="progressSummary" class="progress-summary"></div>
                 <div id="tierProgress" class="tier-progress"></div>
                 <div id="badgesPanel" class="badges-panel"></div>
+                <div class="achievement-export">
+                    <h3>Achievement Certificate</h3>
+                    <p>Download a branded achievement card for motivation and classroom celebration.</p>
+                    <label class="achievement-label" for="achievementNameInput">Player Name</label>
+                    <div class="achievement-controls">
+                        <input id="achievementNameInput" class="achievement-input" type="text" maxlength="40" placeholder="Enter player name">
+                        <button id="exportAchievementBtn" class="btn btn-primary" type="button">Download Achievement PNG</button>
+                    </div>
+                </div>
                 <div class="modal-actions">
                     <button id="progressBackBtn" class="btn btn-secondary" type="button">Back</button>
                     <button id="exportTelemetryBtn" class="btn btn-secondary" type="button">Export Pilot Data</button>

@@ -25,12 +25,63 @@
         deferredInstallPrompt: null,
         currentComponentFilter: 'all',
         currentHintIndex: 0,
+        activeLabPanel: 'objectives',
         lastResult: null,
         aboutInitialized: false
     };
 
     function byId(id) {
         return document.getElementById(id);
+    }
+
+    function sanitizePlayerName(value) {
+        const collapsed = String(value || '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        if (!collapsed) {
+            return 'Future Builder';
+        }
+        return collapsed.slice(0, 40);
+    }
+
+    function getStoredPlayerName() {
+        try {
+            return localStorage.getItem('techBuildersPlayerName') || '';
+        } catch (error) {
+            return '';
+        }
+    }
+
+    function savePlayerName(name) {
+        try {
+            localStorage.setItem('techBuildersPlayerName', name);
+        } catch (error) {
+            // Ignore storage errors for low-storage/private modes.
+        }
+    }
+
+    function drawRoundedRect(ctx, x, y, width, height, radius) {
+        const r = Math.max(0, Math.min(radius, Math.min(width, height) / 2));
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + width - r, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+        ctx.lineTo(x + width, y + height - r);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+        ctx.lineTo(x + r, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+
+    function downloadDataUrl(filename, dataUrl) {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     function showScreen(routeName) {
@@ -92,8 +143,7 @@
                 <span class="component-icon" aria-hidden="true">⚙</span>
                 <span class="component-name">${component.name}</span>
                 <span class="component-category">${component.category}</span>
-                <span class="component-energy">${component.energy > 0 ? '+' : ''}${component.energy}W</span>
-                <span class="component-cost">${component.cost} credits</span>
+                <span class="component-meta">${component.energy > 0 ? '+' : ''}${component.energy}W · ${component.cost} credits</span>
             `;
 
             card.addEventListener('click', () => {
@@ -161,6 +211,50 @@
         }
     }
 
+    function setLabPanel(panelName) {
+        const panels = {
+            objectives: { tabId: 'panelTabObjectives', panelId: 'panelObjectives' },
+            scenario: { tabId: 'panelTabScenario', panelId: 'panelScenario' },
+            feedback: { tabId: 'panelTabFeedback', panelId: 'panelFeedback' }
+        };
+
+        const nextPanel = panels[panelName] ? panelName : 'objectives';
+        app.activeLabPanel = nextPanel;
+
+        Object.entries(panels).forEach(([name, ids]) => {
+            const tab = byId(ids.tabId);
+            const panel = byId(ids.panelId);
+            const isActive = name === nextPanel;
+
+            if (tab) {
+                tab.classList.toggle('panel-tab-active', isActive);
+                tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            }
+
+            if (panel) {
+                panel.classList.toggle('panel-active', isActive);
+                panel.hidden = !isActive;
+            }
+        });
+    }
+
+    function updateQuickSteps(state) {
+        const stepBuild = byId('quickStepBuild');
+        const stepBalance = byId('quickStepBalance');
+        const stepRun = byId('quickStepRun');
+        if (!stepBuild || !stepBalance || !stepRun || !state) {
+            return;
+        }
+
+        const hasComponents = state.components.length > 0;
+        const hasPositiveEnergy = state.energy > 0;
+        const hasRun = Array.isArray(state.lastObjectiveResults) && state.lastObjectiveResults.length > 0;
+
+        stepBuild.classList.toggle('step-complete', hasComponents);
+        stepBalance.classList.toggle('step-complete', hasComponents && hasPositiveEnergy);
+        stepRun.classList.toggle('step-complete', hasRun);
+    }
+
     function renderMap() {
         const mapContainer = byId('tierMap');
         if (!mapContainer || !app.progression) {
@@ -204,10 +298,13 @@
                 node.disabled = !isUnlocked;
 
                 const starText = stars > 0 ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '☆☆☆';
+                const statusText = challengeState && challengeState.passed ? 'Passed' : isUnlocked ? 'Ready' : 'Locked';
                 node.innerHTML = `
-                    <div class="node-title">${challengeDefinition.title}</div>
-                    <div class="node-meta">${challengeDefinition.difficulty} · ${challengeDefinition.estimatedMinutes} mins</div>
-                    <div class="node-meta">${challengeState && challengeState.passed ? 'Passed' : isUnlocked ? 'Unlocked' : 'Locked'}</div>
+                    <div class="node-head">
+                        <div class="node-title">${challengeDefinition.title}</div>
+                        <span class="node-pill">${challengeDefinition.estimatedMinutes}m</span>
+                    </div>
+                    <div class="node-meta">${statusText}</div>
                     <div class="node-stars">${starText}</div>
                 `;
 
@@ -392,6 +489,121 @@
                 badges.appendChild(badgeItem);
             });
         }
+
+        const playerNameInput = byId('achievementNameInput');
+        if (playerNameInput && !playerNameInput.value.trim()) {
+            playerNameInput.value = getStoredPlayerName();
+        }
+    }
+
+    function exportAchievementPng() {
+        const state = app.store.getState();
+        const campaign = state.campaign;
+        const summary = app.progression.getCampaignSummary(campaign);
+        const playerInput = byId('achievementNameInput');
+        const playerName = sanitizePlayerName(playerInput ? playerInput.value : '');
+        const exportDate = new Date();
+
+        if (playerInput) {
+            playerInput.value = playerName;
+        }
+        savePlayerName(playerName);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 1600;
+        canvas.height = 900;
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+            addFeedback('Certificate export is unavailable in this browser.', 'error');
+            return;
+        }
+
+        const bgGradient = ctx.createLinearGradient(0, 0, 1600, 900);
+        bgGradient.addColorStop(0, '#0b2648');
+        bgGradient.addColorStop(0.55, '#124d80');
+        bgGradient.addColorStop(1, '#0d8a7e');
+        ctx.fillStyle = bgGradient;
+        ctx.fillRect(0, 0, 1600, 900);
+
+        ctx.globalAlpha = 0.22;
+        ctx.fillStyle = '#59e7ff';
+        ctx.beginPath();
+        ctx.arc(220, 180, 200, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#69ffa9';
+        ctx.beginPath();
+        ctx.arc(1370, 170, 170, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        drawRoundedRect(ctx, 90, 80, 1420, 740, 34);
+        ctx.fillStyle = 'rgba(8, 20, 38, 0.72)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.fillStyle = '#8ef4ff';
+        ctx.font = '700 42px "Segoe UI", sans-serif';
+        ctx.fillText('Tech Builders Achievement', 140, 172);
+
+        ctx.fillStyle = '#d7ecff';
+        ctx.font = '500 28px "Segoe UI", sans-serif';
+        ctx.fillText('Presented to', 140, 228);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 72px "Segoe UI", sans-serif';
+        ctx.fillText(playerName, 140, 316);
+
+        ctx.fillStyle = '#b9d9f1';
+        ctx.font = '500 26px "Segoe UI", sans-serif';
+        ctx.fillText('for outstanding systems-thinking and innovation in the Tech Builders campaign.', 140, 370);
+
+        ctx.fillStyle = '#69ffb3';
+        ctx.font = '700 32px "Segoe UI", sans-serif';
+        ctx.fillText('Campaign Performance', 140, 446);
+
+        const lines = [
+            `Completed Experiments: ${summary.completedExperiments}/${summary.totalExperiments}`,
+            `Total Stars Earned: ${summary.totalStars}/${summary.maxStars}`,
+            `Mastery Score: ${Math.round(state.points)}/100`,
+            `Simulation Runs: ${state.sessionStats.runs}`,
+            `Badges Unlocked: ${campaign.badges.length}`
+        ];
+
+        ctx.fillStyle = '#eaf7ff';
+        ctx.font = '600 28px "Segoe UI", sans-serif';
+        lines.forEach((line, index) => {
+            ctx.fillText(line, 140, 500 + (index * 48));
+        });
+
+        const badgePreview = campaign.badges.slice(0, 3).join(' | ') || 'Keep building to unlock your first badge';
+        ctx.fillStyle = '#ffd47e';
+        ctx.font = '600 24px "Segoe UI", sans-serif';
+        ctx.fillText(`Featured Badges: ${badgePreview}`, 140, 748);
+
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 38px "Segoe UI", sans-serif';
+        ctx.fillText('Built by Cruze Tech', 1460, 670);
+        ctx.fillStyle = '#d1eaff';
+        ctx.font = '500 24px "Segoe UI", sans-serif';
+        ctx.fillText('cruze-tech.com', 1460, 712);
+        ctx.fillText('games.cruze-tech.com', 1460, 746);
+        ctx.fillText(`Issued ${exportDate.toLocaleDateString()}`, 1460, 786);
+        ctx.textAlign = 'left';
+
+        const safeName = playerName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const filename = `tech-builders-achievement-${safeName || 'player'}.png`;
+        downloadDataUrl(filename, canvas.toDataURL('image/png'));
+
+        app.telemetry.track('achievement_exported', {
+            playerName,
+            completedExperiments: summary.completedExperiments,
+            stars: summary.totalStars
+        });
+        addFeedback('Achievement PNG downloaded.', 'success');
     }
 
     function ensureAboutScreen() {
@@ -489,6 +701,9 @@
         applyPreviewObjectives();
 
         app.currentHintIndex = 0;
+        app.activeLabPanel = 'objectives';
+        setLabPanel('objectives');
+        updateQuickSteps(app.store.getState());
         app.telemetry.track('experiment_started', { experimentId: challengeId, tier: definition.tier });
 
         app.router.navigate('lab', { challengeId });
@@ -531,6 +746,7 @@
             experimentId: app.activeChallengeDefinition.id,
             hintIndex: app.currentHintIndex
         });
+        setLabPanel('feedback');
         addFeedback(`Hint: ${hint}`, 'info');
     }
 
@@ -609,6 +825,9 @@
         });
 
         byId('hintBtn').addEventListener('click', showHint);
+        byId('panelTabObjectives').addEventListener('click', () => setLabPanel('objectives'));
+        byId('panelTabScenario').addEventListener('click', () => setLabPanel('scenario'));
+        byId('panelTabFeedback').addEventListener('click', () => setLabPanel('feedback'));
 
         byId('resultRetryBtn').addEventListener('click', () => {
             if (app.activeChallengeDefinition) {
@@ -624,6 +843,11 @@
         byId('exportTelemetryBtn').addEventListener('click', () => {
             downloadJson('techbuilders-pilot-data.json', app.telemetry.exportPayload());
             addFeedback('Pilot analytics exported.', 'success');
+        });
+
+        byId('exportAchievementBtn').addEventListener('click', exportAchievementPng);
+        byId('achievementNameInput').addEventListener('change', (event) => {
+            savePlayerName(sanitizePlayerName(event.target.value));
         });
 
         byId('clearTelemetryBtn').addEventListener('click', () => {
@@ -648,6 +872,8 @@
             } else if (route.name === 'lab') {
                 renderComponentFilters();
                 renderComponentLibrary();
+                setLabPanel(app.activeLabPanel);
+                updateQuickSteps(app.store.getState());
             } else if (route.name === 'results') {
                 renderResults(app.lastResult);
             } else if (route.name === 'progress') {
@@ -662,6 +888,7 @@
         app.store.subscribe(({ state, reason }) => {
             updateStatsDisplay(state);
             updateSimulationButtons(state);
+            updateQuickSteps(state);
             if (!state.isSimulating) {
                 renderComponentLibrary();
             }
@@ -672,6 +899,7 @@
 
         updateStatsDisplay(app.store.getState());
         updateSimulationButtons(app.store.getState());
+        updateQuickSteps(app.store.getState());
     }
 
     function setupOfflineBanner() {
@@ -768,8 +996,9 @@
         renderComponentFilters();
         renderComponentLibrary();
         ensureAboutScreen();
+        setLabPanel('objectives');
 
-        addFeedback('Welcome to Tech Builders V2.', 'success');
+        addFeedback('Welcome to Tech Builders.', 'success');
         addFeedback('Complete experiments to unlock higher tiers.', 'info');
 
         registerServiceWorker();
