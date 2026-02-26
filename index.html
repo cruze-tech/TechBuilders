@@ -3,177 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a3f66">
     <title>Tech Builders: The Innovation Hub</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="assets/icons/icon-192.svg" type="image/svg+xml">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- MENU SCREEN -->
-    <div class="menu-screen active" id="menuScreen">
+    <div id="offlineBanner" class="offline-banner" role="status" aria-live="polite" hidden>
+        Offline mode: gameplay works with cached assets. New saves stay on this device.
+    </div>
+
+    <div class="menu-screen active" id="menuScreen" aria-labelledby="menuTitle">
         <div class="menu-content">
-            <div class="menu-title">⚡ Tech Builders</div>
-            <div class="menu-subtitle">The Innovation Hub</div>
+            <h1 class="menu-title" id="menuTitle">Tech Builders</h1>
+            <p class="menu-subtitle">The Innovation Hub</p>
             <div class="menu-buttons">
-                <button class="btn btn-primary btn-large" onclick="startGame()">🎮 Start Game</button>
-                <button class="btn btn-secondary btn-large" onclick="showHelpScreen()">❓ How to Play</button>
+                <button class="btn btn-primary btn-large" id="startGameBtn" type="button">Start Game</button>
+                <button class="btn btn-secondary btn-large" id="menuHelpBtn" type="button">How to Play</button>
+                <button class="btn btn-secondary btn-large" id="installBtn" type="button" hidden>Install App</button>
             </div>
         </div>
     </div>
 
-    <!-- HELP SCREEN -->
-    <div class="help-screen" id="helpScreen">
+    <div class="help-screen" id="helpScreen" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
         <div class="help-content">
-            <div class="help-title">📖 How to Play</div>
-            
-            <div class="help-section">
-                <div class="help-section-title">🎯 Objective</div>
-                <p>Design a solar-powered water pumping system for rural communities. Connect solar panels to provide power for the water pump and complete all objectives to maximize your score.</p>
-            </div>
+            <h2 class="help-title" id="helpTitle">How to Play</h2>
 
-            <div class="help-section">
-                <div class="help-section-title">💰 Budget & Resources</div>
+            <section class="help-section">
+                <h3 class="help-section-title">Objective</h3>
+                <p>Design a solar-powered water pumping system for rural communities. Your pump must be powered through wires from a generation source.</p>
+            </section>
+
+            <section class="help-section">
+                <h3 class="help-section-title">Budget and Resources</h3>
                 <ul class="help-list">
-                    <li>Start with 500 credits to spend on components</li>
-                    <li>Each component has a cost displayed in the left sidebar</li>
-                    <li>Earn points by passing simulations to unlock more budget</li>
+                    <li>Start with 500 credits to spend on components.</li>
+                    <li>Each component has a cost shown in the component library.</li>
+                    <li>Your best validated score is saved as your mastery score.</li>
                 </ul>
-            </div>
+            </section>
 
-            <div class="help-section">
-                <div class="help-section-title">⚙️ Components</div>
+            <section class="help-section">
+                <h3 class="help-section-title">Components</h3>
                 <ul class="help-list">
-                    <li><strong>Solar Panel:</strong> Generates 100W (costs 80 credits)</li>
-                    <li><strong>Motor:</strong> Consumes 50W (costs 60 credits)</li>
-                    <li><strong>Water Pump:</strong> Consumes 80W (costs 100 credits)</li>
-                    <li><strong>Battery:</strong> Stores 60W energy (costs 70 credits)</li>
-                    <li><strong>Gear:</strong> Mechanical component (costs 30 credits)</li>
-                    <li><strong>Wire:</strong> Connects components (costs 10 credits)</li>
+                    <li><strong>Solar Panel:</strong> Generates 100W (80 credits)</li>
+                    <li><strong>Motor:</strong> Consumes 50W (60 credits)</li>
+                    <li><strong>Water Pump:</strong> Consumes 80W (100 credits)</li>
+                    <li><strong>Battery:</strong> Supplies 60W (70 credits)</li>
+                    <li><strong>Gear:</strong> Mechanical support component (30 credits)</li>
+                    <li><strong>Wire:</strong> Forms electrical connections (10 credits)</li>
                 </ul>
-            </div>
+            </section>
 
-            <div class="help-section">
-                <div class="help-section-title">🎮 Controls</div>
+            <section class="help-section">
+                <h3 class="help-section-title">Controls</h3>
                 <ul class="help-list">
-                    <li><strong>Click:</strong> Place components from the library onto the canvas</li>
-                    <li><strong>Drag:</strong> Move components around the workspace</li>
-                    <li><strong>R Key:</strong> Rotate selected component</li>
-                    <li><strong>Delete Key:</strong> Remove selected component</li>
+                    <li><strong>Click Component:</strong> Place on canvas</li>
+                    <li><strong>Drag Component:</strong> Move on canvas</li>
+                    <li><strong>R:</strong> Rotate selected component</li>
+                    <li><strong>Delete:</strong> Remove selected component</li>
                 </ul>
-            </div>
+            </section>
 
-            <div class="help-section">
-                <div class="help-section-title">✅ Success Criteria</div>
+            <section class="help-section">
+                <h3 class="help-section-title">Success Criteria</h3>
                 <ul class="help-list">
-                    <li>Generate positive net energy (total energy ≥ 0)</li>
-                    <li>Use at least one solar panel</li>
-                    <li>Include a water pump</li>
-                    <li>Keep design efficient (2-6 components)</li>
+                    <li>System has positive usable net energy.</li>
+                    <li>At least one solar panel is present.</li>
+                    <li>The water pump is powered through the wire network.</li>
+                    <li>Design remains efficient (2 to 8 components).</li>
                 </ul>
-            </div>
-
-            <div class="help-section">
-                <div class="help-section-title">🧪 Testing Your Design</div>
-                <p>Click the "Run Test" button to simulate your system. The system will evaluate your design based on the objectives. Score 70+ to complete the challenge!</p>
-            </div>
+            </section>
 
             <div class="help-buttons">
-                <button class="btn btn-secondary" onclick="hideHelpScreen()">Back to Menu</button>
-                <button class="btn btn-primary" onclick="hideHelpScreen(); startGame()">Start Game</button>
+                <button class="btn btn-secondary" id="helpBackBtn" type="button">Back to Menu</button>
+                <button class="btn btn-primary" id="helpStartBtn" type="button">Start Game</button>
             </div>
         </div>
     </div>
 
-    <!-- GAME SCREEN -->
-    <div id="gameScreen" style="display: none; flex-direction: column; height: 100vh;">
-        <div class="top-bar">
-            <div class="game-title">⚡ Tech Builders: The Innovation Hub</div>
-            <div class="stats-display">
+    <main id="gameScreen" class="game-screen" hidden>
+        <header class="top-bar">
+            <h2 class="game-title">Tech Builders: The Innovation Hub</h2>
+            <div class="stats-display" aria-label="Game stats">
                 <div class="stat-item">
-                    <span>💰</span>
-                    <span id="budgetDisplay">500</span> Credits
+                    <span aria-hidden="true">Credits</span>
+                    <strong id="budgetDisplay">500</strong>
                 </div>
                 <div class="stat-item">
-                    <span>⚡</span>
-                    <span id="energyDisplay">0</span> W
+                    <span aria-hidden="true">Usable Energy</span>
+                    <strong id="energyDisplay">0</strong>W
                 </div>
                 <div class="stat-item">
-                    <span>🏆</span>
-                    <span id="pointsDisplay">0</span> Points
+                    <span aria-hidden="true">Mastery Score</span>
+                    <strong id="pointsDisplay">0</strong>/100
                 </div>
             </div>
-            <button class="btn btn-secondary" onclick="backToMenu()" style="padding: 8px 16px; font-size: 12px;">← Menu</button>
-        </div>
+            <button class="btn btn-secondary top-menu-btn" id="menuBtn" type="button">Menu</button>
+        </header>
 
         <div class="game-container">
-            <div class="sidebar">
-                <div class="sidebar-section">
-                    <div class="section-title">⚙️ Components Library</div>
-                    <div class="component-grid" id="componentLibrary"></div>
-                </div>
-            </div>
+            <aside class="sidebar" aria-label="Component library">
+                <h3 class="section-title">Components</h3>
+                <div class="component-grid" id="componentLibrary"></div>
+            </aside>
 
-            <div class="canvas-area">
-                <svg id="buildCanvas" viewBox="0 0 1000 700"></svg>
-            </div>
+            <section class="canvas-area" aria-label="Design workspace">
+                <svg id="buildCanvas" viewBox="0 0 1000 700" role="img" aria-label="Canvas used to arrange components"></svg>
+            </section>
 
-            <div class="right-panel">
+            <aside class="right-panel" aria-label="Challenge details and controls">
                 <div class="challenge-box">
-                    <div class="challenge-title">🎯 Solar Water Pump</div>
-                    <div class="challenge-desc">
-                        Design a solar-powered water pumping system for rural communities. 
-                        Connect solar panels to provide power for the water pump.
-                    </div>
-                    <div class="section-title">Objectives:</div>
-                    <ul class="objectives-list" id="objectivesList"></ul>
+                    <h3 class="challenge-title" id="challengeTitle">Solar Water Pump</h3>
+                    <p class="challenge-desc" id="challengeDesc">Design a solar-powered water pumping system for rural communities.</p>
+                    <h4 class="section-title">Objectives</h4>
+                    <ul class="objectives-list" id="objectivesList" aria-live="polite"></ul>
                 </div>
 
                 <div class="controls">
-                    <button class="btn btn-primary" id="runSimBtn">▶️ Run Test</button>
-                    <button class="btn btn-secondary" id="stopSimBtn" disabled>⏹️ Stop</button>
+                    <button class="btn btn-primary" id="runSimBtn" type="button">Run Test</button>
+                    <button class="btn btn-secondary" id="stopSimBtn" type="button" disabled>Stop</button>
                 </div>
 
-                <div class="controls">
-                    <button class="btn btn-secondary" id="saveBtn">💾 Save</button>
-                    <button class="btn btn-secondary" id="loadBtn">📂 Load</button>
-                    <button class="btn btn-danger" id="clearBtn">🗑️ Clear</button>
+                <div class="controls controls-secondary">
+                    <button class="btn btn-secondary" id="saveBtn" type="button">Save</button>
+                    <button class="btn btn-secondary" id="loadBtn" type="button">Load</button>
+                    <button class="btn btn-danger" id="clearBtn" type="button">Clear</button>
                 </div>
 
                 <div class="feedback-panel">
-                    <div class="feedback-title">📊 System Feedback</div>
-                    <div id="feedbackMessages"></div>
+                    <h4 class="feedback-title">System Feedback</h4>
+                    <div id="feedbackMessages" role="log" aria-live="polite" aria-relevant="additions text"></div>
                 </div>
-            </div>
+            </aside>
         </div>
-    </div>
+    </main>
 
-    <!-- SUCCESS MODAL -->
-    <div class="modal" id="successModal">
+    <div class="modal" id="successModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="modal-content">
-            <div class="modal-title">🎉 Challenge Complete!</div>
+            <h3 class="modal-title" id="modalTitle">Challenge Complete</h3>
             <div class="modal-score" id="modalScore">95/100</div>
             <p id="modalMessage">Excellent work!</p>
-            <button class="btn btn-primary" onclick="closeModal()">Continue Building</button>
+            <button class="btn btn-primary" id="closeModalBtn" type="button">Continue Building</button>
         </div>
     </div>
 
-    <!-- SCRIPTS -->
     <script src="js/constants.js"></script>
+    <script src="js/eventBus.js"></script>
+    <script src="js/persistence.js"></script>
+    <script src="js/systemEvaluator.js"></script>
+    <script src="js/challengeRepository.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/gameState.js"></script>
     <script src="js/canvasManager.js"></script>
     <script src="js/challenge.js"></script>
     <script src="js/simulationEngine.js"></script>
     <script src="js/app.js"></script>
-
-    <script>
-        function startGame() {
-            hideMenuScreen();
-        }
-
-        function backToMenu() {
-            if (confirm('Return to menu? Unsaved progress will be lost.')) {
-                showMenuScreen();
-            }
-        }
-    </script>
 </body>
 </html>

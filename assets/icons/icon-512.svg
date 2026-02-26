@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Tech Builders icon 512">
+  <defs>
+    <linearGradient id="bg512" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#113154"/>
+      <stop offset="52%" stop-color="#19507d"/>
+      <stop offset="100%" stop-color="#1d7e72"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="72" fill="url(#bg512)"/>
+  <rect x="78" y="304" width="356" height="62" rx="20" fill="#56f0ab" opacity="0.9"/>
+  <rect x="102" y="198" width="122" height="70" rx="10" fill="#52e3ff"/>
+  <rect x="286" y="156" width="124" height="112" rx="10" fill="#52e3ff"/>
+  <path d="M164 198V120M346 156V88" stroke="#ffe08a" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="164" cy="106" r="24" fill="#ffd166"/>
+  <circle cx="346" cy="74" r="24" fill="#ffd166"/>
+  <text x="256" y="440" text-anchor="middle" fill="#f2f8fb" font-family="Segoe UI, sans-serif" font-size="42" font-weight="700">Tech Builders</text>
+</svg>

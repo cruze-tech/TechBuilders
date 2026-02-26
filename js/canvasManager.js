@@ -1,176 +1,211 @@
-class CanvasManager {
-    constructor(svgElement) {
-        this.svg = svgElement;
-        this.draggedElement = null;
-        this.dragOffset = {x: 0, y: 0};
-        this.setupEventListeners();
-    }
+(function (root) {
+    class CanvasManager {
+        constructor(svgElement, store, bus) {
+            this.svg = svgElement;
+            this.store = store;
+            this.bus = bus;
+            this.drag = {
+                active: false,
+                pointerId: null,
+                componentId: null,
+                offsetX: 0,
+                offsetY: 0,
+                moved: false
+            };
 
-    setupEventListeners() {
-        this.svg.addEventListener('mousedown', this.handleMouseDown.bind(this));
-        this.svg.addEventListener('mousemove', this.handleMouseMove.bind(this));
-        this.svg.addEventListener('mouseup', this.handleMouseUp.bind(this));
-        
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Delete' && gameState.selectedComponent && !gameState.isSimulating) {
-                this.removeComponent(gameState.selectedComponent);
+            this.setupEventListeners();
+            this.store.subscribe(() => this.render());
+            this.render();
+        }
+
+        setupEventListeners() {
+            this.svg.addEventListener('pointerdown', (event) => this.handlePointerDown(event));
+            this.svg.addEventListener('pointermove', (event) => this.handlePointerMove(event));
+            this.svg.addEventListener('pointerup', (event) => this.handlePointerUp(event));
+            this.svg.addEventListener('pointercancel', (event) => this.handlePointerUp(event));
+
+            document.addEventListener('keydown', (event) => {
+                const state = this.store.getState();
+                if (state.isSimulating) {
+                    return;
+                }
+
+                if ((event.key === 'Delete' || event.key === 'Backspace') && state.selectedComponentId) {
+                    const removed = this.store.removeComponent(state.selectedComponentId);
+                    if (removed) {
+                        addFeedback('Component removed.', 'info');
+                    }
+                    event.preventDefault();
+                }
+
+                if (event.key.toLowerCase() === 'r' && state.selectedComponentId) {
+                    const rotated = this.store.rotateComponent(state.selectedComponentId, 45);
+                    if (rotated) {
+                        addFeedback('Component rotated.', 'info');
+                    }
+                    event.preventDefault();
+                }
+
+                if (event.key === 'Escape') {
+                    this.store.selectComponent(null);
+                }
+            });
+        }
+
+        getSVGPoint(event) {
+            const rect = this.svg.getBoundingClientRect();
+            const viewBox = this.svg.viewBox.baseVal;
+            const scaleX = viewBox.width / rect.width;
+            const scaleY = viewBox.height / rect.height;
+
+            return {
+                x: (event.clientX - rect.left) * scaleX,
+                y: (event.clientY - rect.top) * scaleY
+            };
+        }
+
+        getComponentById(componentId) {
+            return this.store.getState().components.find((component) => component.id === componentId) || null;
+        }
+
+        handlePointerDown(event) {
+            const state = this.store.getState();
+            if (state.isSimulating) {
+                return;
             }
-            if (e.key === 'r' && gameState.selectedComponent && !gameState.isSimulating) {
-                this.rotateComponent(gameState.selectedComponent, 45);
+
+            const target = event.target.closest('.placed-component');
+            if (!target) {
+                this.store.selectComponent(null);
+                return;
             }
-        });
-    }
 
-    getSVGPoint(event) {
-        const rect = this.svg.getBoundingClientRect();
-        const viewBox = this.svg.viewBox.baseVal;
-        const scaleX = viewBox.width / rect.width;
-        const scaleY = viewBox.height / rect.height;
-        
-        return {
-            x: (event.clientX - rect.left) * scaleX,
-            y: (event.clientY - rect.top) * scaleY
-        };
-    }
-
-    handleMouseDown(e) {
-        if (gameState.isSimulating) return;
-        
-        const target = e.target.closest('.placed-component');
-        if (target) {
-            this.draggedElement = target;
-            const point = this.getSVGPoint(e);
-            const comp = gameState.placedComponents.find(c => c.element === target);
-            if (comp) {
-                this.dragOffset.x = point.x - comp.x;
-                this.dragOffset.y = point.y - comp.y;
-                this.selectComponent(comp);
+            const componentId = target.getAttribute('data-id');
+            const component = this.getComponentById(componentId);
+            if (!component) {
+                return;
             }
-            e.preventDefault();
-        }
-    }
 
-    handleMouseMove(e) {
-        if (this.draggedElement && !gameState.isSimulating) {
-            const point = this.getSVGPoint(e);
-            const comp = gameState.placedComponents.find(c => c.element === this.draggedElement);
-            if (comp) {
-                comp.x = point.x - this.dragOffset.x;
-                comp.y = point.y - this.dragOffset.y;
-                this.updateComponentTransform(comp);
+            const point = this.getSVGPoint(event);
+            this.drag.active = true;
+            this.drag.pointerId = event.pointerId;
+            this.drag.componentId = component.id;
+            this.drag.offsetX = point.x - component.x;
+            this.drag.offsetY = point.y - component.y;
+            this.drag.moved = false;
+
+            this.svg.setPointerCapture(event.pointerId);
+            this.store.selectComponent(component.id);
+            event.preventDefault();
+        }
+
+        handlePointerMove(event) {
+            const state = this.store.getState();
+            if (!this.drag.active || this.drag.pointerId !== event.pointerId || state.isSimulating) {
+                return;
+            }
+
+            const point = this.getSVGPoint(event);
+            const nextX = point.x - this.drag.offsetX;
+            const nextY = point.y - this.drag.offsetY;
+
+            this.store.updateComponentPosition(this.drag.componentId, nextX, nextY, {
+                commitVersion: false
+            });
+            this.drag.moved = true;
+        }
+
+        handlePointerUp(event) {
+            if (!this.drag.active || this.drag.pointerId !== event.pointerId) {
+                return;
+            }
+
+            const componentId = this.drag.componentId;
+            if (this.drag.moved && componentId) {
+                const component = this.getComponentById(componentId);
+                if (component) {
+                    this.store.updateComponentPosition(component.id, component.x, component.y, {
+                        commitVersion: true
+                    });
+                }
+            }
+
+            this.drag.active = false;
+            this.drag.pointerId = null;
+            this.drag.componentId = null;
+            this.drag.moved = false;
+        }
+
+        clearCanvas() {
+            while (this.svg.firstChild) {
+                this.svg.removeChild(this.svg.firstChild);
             }
         }
-    }
 
-    handleMouseUp(e) {
-        this.draggedElement = null;
-    }
+        renderComponent(component, state) {
+            const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            group.classList.add('placed-component');
+            group.setAttribute('data-id', component.id);
 
-    selectComponent(comp) {
-        if (gameState.selectedComponent && gameState.selectedComponent.element) {
-            gameState.selectedComponent.element.classList.remove('selected');
+            if (state.selectedComponentId === component.id) {
+                group.classList.add('selected');
+            }
+
+            if (state.isSimulating) {
+                group.classList.add('simulating');
+            }
+
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.classList.add('component-shape');
+            rect.setAttribute('width', component.width);
+            rect.setAttribute('height', component.height);
+            rect.setAttribute('fill', component.color);
+            rect.setAttribute('rx', '8');
+
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', component.width / 2);
+            label.setAttribute('y', component.height / 2 - 4);
+            label.setAttribute('text-anchor', 'middle');
+            label.setAttribute('dominant-baseline', 'middle');
+            label.setAttribute('fill', '#ffffff');
+            label.setAttribute('font-size', '13');
+            label.setAttribute('font-weight', '700');
+            label.setAttribute('pointer-events', 'none');
+            label.textContent = component.name;
+
+            const energy = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            energy.setAttribute('x', component.width / 2);
+            energy.setAttribute('y', component.height / 2 + 14);
+            energy.setAttribute('text-anchor', 'middle');
+            energy.setAttribute('dominant-baseline', 'middle');
+            energy.setAttribute('fill', component.energy >= 0 ? '#a4ffd3' : '#ffb6b6');
+            energy.setAttribute('font-size', '10');
+            energy.setAttribute('pointer-events', 'none');
+            energy.textContent = component.energy === 0 ? '0W' : `${component.energy > 0 ? '+' : ''}${component.energy}W`;
+
+            group.appendChild(rect);
+            group.appendChild(label);
+            group.appendChild(energy);
+
+            const transform = `translate(${component.x}, ${component.y}) rotate(${component.rotation}, ${component.width / 2}, ${component.height / 2})`;
+            group.setAttribute('transform', transform);
+
+            return group;
         }
-        gameState.selectedComponent = comp;
-        comp.element.classList.add('selected');
-    }
 
-    placeComponent(type, x, y, deductCost = true) {
-        const template = COMPONENTS[type];
-        if (!template) return null;
-
-        const component = {
-            type: type,
-            ...template,
-            id: Date.now(),
-            x: x - template.width / 2,
-            y: y - template.height / 2,
-            rotation: 0,
-            element: null
-        };
-
-        if (deductCost && !gameState.addComponent(component)) {
-            addFeedback('❌ Insufficient budget!', 'error');
-            return null;
-        }
-
-        if (!deductCost) {
-            gameState.placedComponents.push(component);
-        }
-
-        this.renderComponent(component);
-        addFeedback(`✓ ${component.name} placed`, 'success');
-        return component;
-    }
-
-    renderComponent(component) {
-        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        g.classList.add('placed-component');
-        g.setAttribute('data-id', component.id);
-
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rect.setAttribute('width', component.width);
-        rect.setAttribute('height', component.height);
-        rect.setAttribute('fill', component.color);
-        rect.setAttribute('stroke', '#00ffff');
-        rect.setAttribute('stroke-width', '2');
-        rect.setAttribute('rx', '8');
-        rect.setAttribute('opacity', '0.85');
-
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', component.width / 2);
-        text.setAttribute('y', component.height / 2);
-        text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('dominant-baseline', 'middle');
-        text.setAttribute('fill', '#ffffff');
-        text.setAttribute('font-size', '14');
-        text.setAttribute('font-weight', 'bold');
-        text.setAttribute('pointer-events', 'none');
-        text.textContent = component.name;
-
-        const energyText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        energyText.setAttribute('x', component.width / 2);
-        energyText.setAttribute('y', component.height / 2 + 18);
-        energyText.setAttribute('text-anchor', 'middle');
-        energyText.setAttribute('fill', component.energy > 0 ? '#00ff88' : '#ff6666');
-        energyText.setAttribute('font-size', '11');
-        energyText.setAttribute('pointer-events', 'none');
-        energyText.textContent = component.energy !== 0 ? `${component.energy > 0 ? '+' : ''}${component.energy}W` : '';
-
-        g.appendChild(rect);
-        g.appendChild(text);
-        g.appendChild(energyText);
-
-        component.element = g;
-        this.updateComponentTransform(component);
-        this.svg.appendChild(g);
-    }
-
-    updateComponentTransform(component) {
-        if (!component.element) return;
-        const transform = `translate(${component.x}, ${component.y}) rotate(${component.rotation}, ${component.width/2}, ${component.height/2})`;
-        component.element.setAttribute('transform', transform);
-    }
-
-    rotateComponent(component, angle) {
-        component.rotation = (component.rotation + angle) % 360;
-        this.updateComponentTransform(component);
-        addFeedback(`Rotated ${component.name}`, 'info');
-    }
-
-    removeComponent(component) {
-        if (component.element) {
-            component.element.remove();
-        }
-        gameState.removeComponent(component);
-        if (gameState.selectedComponent === component) {
-            gameState.selectedComponent = null;
-        }
-        addFeedback(`Removed ${component.name}`, 'info');
-    }
-
-    clearCanvas() {
-        while (this.svg.firstChild) {
-            this.svg.removeChild(this.svg.firstChild);
+        render() {
+            const state = this.store.getState();
+            this.clearCanvas();
+            state.components.forEach((component) => {
+                const node = this.renderComponent(component, state);
+                this.svg.appendChild(node);
+            });
         }
     }
-}
+
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = { CanvasManager };
+    }
+
+    root.CanvasManager = CanvasManager;
+})(typeof window !== 'undefined' ? window : globalThis);

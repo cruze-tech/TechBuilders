@@ -1,0 +1,44 @@
+{
+    "schemaVersion": 1,
+    "challenges": [
+        {
+            "id": "solar-water-pump",
+            "title": "Solar Water Pump",
+            "description": "Design a resilient system where solar generation is delivered to a water pump through wire connections.",
+            "passScore": 75,
+            "objectives": [
+                {
+                    "id": "positive-energy",
+                    "type": "positive_energy",
+                    "weight": 25,
+                    "text": "System has positive usable net energy",
+                    "threshold": 0
+                },
+                {
+                    "id": "solar-required",
+                    "type": "component_presence",
+                    "componentType": "solarPanel",
+                    "minCount": 1,
+                    "weight": 20,
+                    "text": "At least one solar panel is installed"
+                },
+                {
+                    "id": "pump-powered",
+                    "type": "powered_component",
+                    "componentType": "waterPump",
+                    "minCount": 1,
+                    "weight": 35,
+                    "text": "Water pump is powered through wires"
+                },
+                {
+                    "id": "efficient-design",
+                    "type": "component_count_range",
+                    "min": 2,
+                    "max": 8,
+                    "weight": 20,
+                    "text": "Design stays efficient (2 to 8 components)"
+                }
+            ]
+        }
+    ]
+}
