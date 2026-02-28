@@ -27,7 +27,8 @@
         currentHintIndex: 0,
         activeLabPanel: 'objectives',
         lastResult: null,
-        aboutInitialized: false
+        aboutInitialized: false,
+        evaluatingPreview: false  // Guard against recursive preview evaluation
     };
 
     function byId(id) {
@@ -684,11 +685,20 @@ function toggleSidebar() {
     }
 
     function applyPreviewObjectives() {
-        if (!app.simulation || !app.activeChallenge) {
+        if (!app.simulation || !app.activeChallenge || app.evaluatingPreview) {
             return;
         }
-        const preview = app.simulation.previewObjectives();
-        app.activeChallenge.updateObjectiveUI(preview.objectiveResults);
+        
+        try {
+            app.evaluatingPreview = true;
+            const preview = app.simulation.previewObjectives();
+            app.activeChallenge.updateObjectiveUI(preview.objectiveResults);
+        } catch (error) {
+            console.error('Preview evaluation failed:', error.message);
+            addFeedback('System evaluation error. Try adjusting your design.', 'warning');
+        } finally {
+            app.evaluatingPreview = false;
+        }
     }
 
     function calculateHighestTierUnlocked(unlockedIds) {
@@ -970,13 +980,16 @@ function toggleSidebar() {
                 const rightPanel = document.querySelector('.right-panel');
                 if (sidebar) sidebar.classList.add('expanded');
                 if (rightPanel) rightPanel.classList.add('expanded');
-                if (byId('toggleSidebarBtn')) byId('toggleSidebarBtn').setAttribute('aria-pressed', 'true');
-                if (byId('toggleRightPanelBtn')) byId('toggleRightPanelBtn').setAttribute('aria-pressed', 'true');
+                if (byId('toggleSidebarBtn')) {
+                    byId('toggleSidebarBtn').setAttribute('aria-pressed', 'true');
+                    byId('toggleSidebarBtn').textContent = '◀';
+                }
+                if (byId('toggleRightPanelBtn')) {
+                    byId('toggleRightPanelBtn').setAttribute('aria-pressed', 'true');
+                    byId('toggleRightPanelBtn').textContent = '⊖';
+                }
 
-                renderComponentFilters();
-                renderComponentLibrary();
                 setLabPanel(app.activeLabPanel);
-                updateQuickSteps(app.store.getState());
             } else if (route.name === 'results') {
                 renderResults(app.lastResult);
             } else if (route.name === 'progress') {
@@ -1097,6 +1110,7 @@ function toggleSidebar() {
         setupOfflineBanner();
         setupInstallPrompt();
 
+        // Render component UI once here to populate the library
         renderComponentFilters();
         renderComponentLibrary();
         ensureAboutScreen();
