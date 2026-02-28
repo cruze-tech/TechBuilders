@@ -1,6 +1,6 @@
-# Tech Builders V2: Innovation Sprint
+# Tech Builders: Innovation Sprint
 
-Tech Builders V2 is a launch-ready educational engineering game for ages 12-18. Players progress through 10 experiments across energy, water, health, transport, and resilience systems.
+Tech Builders is a launch-ready educational engineering game for ages 12-18. Players progress through 10 experiments across energy, water, health, transport, and resilience systems.
 
 ## Core Experience
 
