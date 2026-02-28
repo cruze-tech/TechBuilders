@@ -177,34 +177,35 @@
             }
         }
 
-        function toggleSidebarCollapsed() {
-            const sidebar = byId('componentLibrary') && byId('componentLibrary').closest('.sidebar');
-            if (!sidebar) return;
-            const collapsed = sidebar.classList.toggle('collapsed');
-            const toggle = byId('toggleSidebarBtn');
-            if (toggle) toggle.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
+function toggleSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+        const isExpanded = sidebar.classList.toggle('expanded');
+        const toggle = byId('toggleSidebarBtn');
+        if (toggle) {
+            toggle.setAttribute('aria-pressed', isExpanded ? 'true' : 'false');
+            toggle.textContent = isExpanded ? '◀' : '▶';
+        }
+    }
+
+    function toggleRightPanel() {
+        const panel = document.querySelector('.right-panel');
+        if (!panel) return;
+        const isExpanded = panel.classList.toggle('expanded');
+        const toggle = byId('toggleRightPanelBtn');
+        if (toggle) {
+            toggle.setAttribute('aria-pressed', isExpanded ? 'true' : 'false');
+            toggle.textContent = isExpanded ? '⊖' : '⊕';
+        }
         }
 
-        /* Onboarding micro-tutorial */
-        const ONBOARDING_STEPS = [
-            { title: 'Welcome to the Build Lab', body: 'This is the workspace where you place components and run simulations to test your design.' },
-            { title: 'Pick Components', body: 'Open the Components panel, choose parts, and place them onto the canvas.' },
-            { title: 'Run Simulation', body: 'Tap the big Run button to test your system and get feedback to improve.' }
-        ];
-        let onboardingIndex = 0;
-
-        function showOnboarding() {
-            onboardingIndex = 0;
-            const overlay = document.getElementById('onboardingOverlay');
-            if (!overlay) return;
-            overlay.hidden = false;
-            renderOnboardingStep();
-        }
-
-        function hideOnboarding() {
-            const overlay = document.getElementById('onboardingOverlay');
-            if (!overlay) return;
-            overlay.hidden = true;
+    // Initialize toggle button text
+    function initToggleButtons() {
+        const sidebarToggle = byId('toggleSidebarBtn');
+        const rightToggle = byId('toggleRightPanelBtn');
+        if (sidebarToggle) sidebarToggle.textContent = '◀';
+        if (rightToggle) rightToggle.textContent = '⊖';
+    }
         }
 
         function renderOnboardingStep() {
@@ -866,7 +867,12 @@
 
         const toggleSidebarBtnEl = byId('toggleSidebarBtn');
         if (toggleSidebarBtnEl) {
-            toggleSidebarBtnEl.addEventListener('click', () => toggleSidebarCollapsed());
+            toggleSidebarBtnEl.addEventListener('click', () => toggleSidebar());
+        }
+
+        const toggleRightPanelBtnEl = byId('toggleRightPanelBtn');
+        if (toggleRightPanelBtnEl) {
+            toggleRightPanelBtnEl.addEventListener('click', () => toggleRightPanel());
         }
 
         byId('runSimBtn').addEventListener('click', onRunSimulation);
@@ -959,6 +965,14 @@
             } else if (route.name === 'briefing') {
                 renderBriefing(route.params.challengeId);
             } else if (route.name === 'lab') {
+                // Expand panels by default on entering lab
+                const sidebar = document.querySelector('.sidebar');
+                const rightPanel = document.querySelector('.right-panel');
+                if (sidebar) sidebar.classList.add('expanded');
+                if (rightPanel) rightPanel.classList.add('expanded');
+                if (byId('toggleSidebarBtn')) byId('toggleSidebarBtn').setAttribute('aria-pressed', 'true');
+                if (byId('toggleRightPanelBtn')) byId('toggleRightPanelBtn').setAttribute('aria-pressed', 'true');
+
                 renderComponentFilters();
                 renderComponentLibrary();
                 setLabPanel(app.activeLabPanel);
@@ -1078,6 +1092,7 @@
 
         setupRouteHandling();
         setupStoreBindings();
+        initToggleButtons();
         bindButtons();
         setupOfflineBanner();
         setupInstallPrompt();
