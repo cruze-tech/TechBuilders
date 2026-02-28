@@ -146,6 +146,7 @@
                 <span class="component-meta">${component.energy > 0 ? '+' : ''}${component.energy}W · ${component.cost} credits</span>
             `;
 
+            card.title = `${component.name} — ${component.energy > 0 ? '+' : ''}${component.energy}W · ${component.cost} credits`;
             card.addEventListener('click', () => {
                 const index = app.store.getState().components.length;
                 const x = 220 + (index % 5) * 170;
@@ -164,6 +165,73 @@
             });
 
             library.appendChild(card);
+
+        /* Focus mode toggle: hides panels and expands canvas for clearer interaction */
+        function setFocusMode(enabled) {
+            const root = document.documentElement;
+            document.body.classList.toggle('focus-mode', enabled);
+            const btn = byId('focusToggleBtn');
+            if (btn) {
+                btn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+                btn.textContent = enabled ? 'Exit Focus' : 'Focus';
+            }
+        }
+
+        function toggleSidebarCollapsed() {
+            const sidebar = byId('componentLibrary') && byId('componentLibrary').closest('.sidebar');
+            if (!sidebar) return;
+            const collapsed = sidebar.classList.toggle('collapsed');
+            const toggle = byId('toggleSidebarBtn');
+            if (toggle) toggle.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
+        }
+
+        /* Onboarding micro-tutorial */
+        const ONBOARDING_STEPS = [
+            { title: 'Welcome to the Build Lab', body: 'This is the workspace where you place components and run simulations to test your design.' },
+            { title: 'Pick Components', body: 'Open the Components panel, choose parts, and place them onto the canvas.' },
+            { title: 'Run Simulation', body: 'Tap the big Run button to test your system and get feedback to improve.' }
+        ];
+        let onboardingIndex = 0;
+
+        function showOnboarding() {
+            onboardingIndex = 0;
+            const overlay = document.getElementById('onboardingOverlay');
+            if (!overlay) return;
+            overlay.hidden = false;
+            renderOnboardingStep();
+        }
+
+        function hideOnboarding() {
+            const overlay = document.getElementById('onboardingOverlay');
+            if (!overlay) return;
+            overlay.hidden = true;
+        }
+
+        function renderOnboardingStep() {
+            const overlay = document.getElementById('onboardingOverlay');
+            if (!overlay) return;
+            const step = ONBOARDING_STEPS[onboardingIndex];
+            overlay.querySelector('.onboarding-title').textContent = step.title;
+            overlay.querySelector('.onboarding-body').textContent = step.body;
+            overlay.querySelector('#onboardingPrev').disabled = onboardingIndex === 0;
+            overlay.querySelector('#onboardingNext').textContent = onboardingIndex === ONBOARDING_STEPS.length - 1 ? 'Done' : 'Next';
+        }
+
+        function nextOnboarding() {
+            if (onboardingIndex < ONBOARDING_STEPS.length - 1) {
+                onboardingIndex += 1;
+                renderOnboardingStep();
+                return;
+            }
+            hideOnboarding();
+        }
+
+        function prevOnboarding() {
+            if (onboardingIndex > 0) {
+                onboardingIndex -= 1;
+                renderOnboardingStep();
+            }
+        }
         });
     }
 
@@ -791,6 +859,16 @@
         byId('labToProgressBtn').addEventListener('click', () => app.router.navigate('progress'));
         byId('labToAboutBtn').addEventListener('click', () => app.router.navigate('about'));
 
+        const focusBtn = byId('focusToggleBtn');
+        if (focusBtn) {
+            focusBtn.addEventListener('click', () => setFocusMode(!document.body.classList.contains('focus-mode')));
+        }
+
+        const toggleSidebarBtnEl = byId('toggleSidebarBtn');
+        if (toggleSidebarBtnEl) {
+            toggleSidebarBtnEl.addEventListener('click', () => toggleSidebarCollapsed());
+        }
+
         byId('runSimBtn').addEventListener('click', onRunSimulation);
         byId('stopSimBtn').addEventListener('click', () => app.simulation.stop(true));
 
@@ -859,6 +937,17 @@
             addFeedback('Pilot analytics cleared.', 'warning');
             renderProgress();
         });
+
+        // Make Run Simulation more prominent: floating in canvas area
+        const runBtn = byId('runSimBtn');
+        const canvasArea = document.querySelector('.canvas-area');
+        if (runBtn && canvasArea) {
+            runBtn.classList.add('floating-run');
+            // ensure click still triggers simulation
+            runBtn.addEventListener('click', (e) => {
+                if (typeof onRunSimulation === 'function') onRunSimulation(e);
+            });
+        }
     }
 
     function setupRouteHandling() {
@@ -1003,6 +1092,26 @@
 
         registerServiceWorker();
         app.router.replace('splash');
+
+        // expose onboarding controls globally for the small onboarding helper
+        window.nextOnboarding = nextOnboarding;
+        window.prevOnboarding = prevOnboarding;
+        window.hideOnboarding = hideOnboarding;
+        window.showOnboarding = showOnboarding;
+
+        // initialize onboarding wiring if available
+        if (window.Onboarding && typeof window.Onboarding.initOnboarding === 'function') {
+            window.Onboarding.initOnboarding();
+        }
+
+        // Auto-show onboarding once per user when entering lab for first time
+        const seen = localStorage.getItem('techBuildersSeenOnboarding');
+        app.router.onChange((route) => {
+            if (route.name === 'lab' && !seen) {
+                showOnboarding();
+                localStorage.setItem('techBuildersSeenOnboarding', '1');
+            }
+        });
     }
 
     document.addEventListener('DOMContentLoaded', () => {
