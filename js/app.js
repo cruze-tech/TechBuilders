@@ -28,37 +28,25 @@
         activeLabPanel: 'objectives',
         lastResult: null,
         aboutInitialized: false,
-        evaluatingPreview: false  // Guard against recursive preview evaluation
+        evaluatingPreview: false,
+        onboardingIndex: 0
     };
 
-    function byId(id) {
-        return document.getElementById(id);
-    }
+    // ─── Utilities ───────────────────────────────────────────────────────────
+
+    function byId(id) { return document.getElementById(id); }
 
     function sanitizePlayerName(value) {
-        const collapsed = String(value || '')
-            .replace(/\s+/g, ' ')
-            .trim();
-        if (!collapsed) {
-            return 'Future Builder';
-        }
-        return collapsed.slice(0, 40);
+        const collapsed = String(value || '').replace(/\s+/g, ' ').trim();
+        return collapsed ? collapsed.slice(0, 40) : 'Future Builder';
     }
 
     function getStoredPlayerName() {
-        try {
-            return localStorage.getItem('techBuildersPlayerName') || '';
-        } catch (error) {
-            return '';
-        }
+        try { return localStorage.getItem('techBuildersPlayerName') || ''; } catch { return ''; }
     }
 
     function savePlayerName(name) {
-        try {
-            localStorage.setItem('techBuildersPlayerName', name);
-        } catch (error) {
-            // Ignore storage errors for low-storage/private modes.
-        }
+        try { localStorage.setItem('techBuildersPlayerName', name); } catch { /* ignore */ }
     }
 
     function drawRoundedRect(ctx, x, y, width, height, radius) {
@@ -85,100 +73,61 @@
         document.body.removeChild(link);
     }
 
+    // ─── Screen Management ───────────────────────────────────────────────────
+
     function showScreen(routeName) {
         const screenId = ROUTE_TO_SCREEN[routeName] || ROUTE_TO_SCREEN.mode;
         document.querySelectorAll('.screen').forEach((screen) => {
             screen.classList.remove('screen-active');
+            screen.setAttribute('aria-hidden', 'true');
         });
         const target = byId(screenId);
         if (target) {
             target.classList.add('screen-active');
+            target.setAttribute('aria-hidden', 'false');
         }
     }
 
-    function renderComponentFilters() {
-        const container = byId('componentFilters');
-        if (!container) {
-            return;
+    // ─── Stats Display with Warning States ───────────────────────────────────
+
+    function updateStatsDisplay(state) {
+        const budgetDisplay = byId('budgetDisplay');
+        const energyDisplay = byId('energyDisplay');
+        const pointsDisplay = byId('pointsDisplay');
+
+        if (budgetDisplay) {
+            const budget = Math.max(0, Math.round(state.budget));
+            budgetDisplay.textContent = String(budget);
+            // Warning when budget is low
+            budgetDisplay.closest('.stat-item')?.classList.toggle('stat-warning', budget < 200);
+            budgetDisplay.closest('.stat-item')?.classList.toggle('stat-danger', budget < 80);
         }
-
-        const categories = Array.from(new Set(Object.values(COMPONENTS).map((component) => component.category)));
-        const options = ['all', ...categories];
-
-        container.innerHTML = '';
-        options.forEach((category) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = `filter-chip${app.currentComponentFilter === category ? ' active' : ''}`;
-            button.textContent = category === 'all' ? 'all' : category;
-            button.addEventListener('click', () => {
-                app.currentComponentFilter = category;
-                renderComponentFilters();
-                renderComponentLibrary();
-            });
-            container.appendChild(button);
-        });
+        if (energyDisplay) {
+            const energy = Math.round(state.energy);
+            energyDisplay.textContent = String(energy);
+            // Warning when energy is negative or zero
+            energyDisplay.closest('.stat-item')?.classList.toggle('stat-warning', energy < 0);
+            energyDisplay.closest('.stat-item')?.classList.toggle('stat-ok', energy > 0);
+        }
+        if (pointsDisplay) {
+            pointsDisplay.textContent = String(Math.round(state.points));
+        }
     }
 
-    function renderComponentLibrary() {
-        const library = byId('componentLibrary');
-        if (!library) {
-            return;
+    // ─── Focus Mode ───────────────────────────────────────────────────────────
+
+    function setFocusMode(enabled) {
+        document.body.classList.toggle('focus-mode', enabled);
+        const btn = byId('focusToggleBtn');
+        if (btn) {
+            btn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+            btn.textContent = enabled ? 'Exit Focus' : 'Focus';
         }
+    }
 
-        const state = app.store.getState();
-        library.innerHTML = '';
+    // ─── Panel Toggles ────────────────────────────────────────────────────────
 
-        Object.entries(COMPONENTS).forEach(([type, component]) => {
-            if (app.currentComponentFilter !== 'all' && component.category !== app.currentComponentFilter) {
-                return;
-            }
-
-            const card = document.createElement('button');
-            card.type = 'button';
-            card.className = 'component-item';
-            card.disabled = state.isSimulating;
-            card.setAttribute('aria-label', `Add ${component.name}`);
-
-            card.innerHTML = `
-                <span class="component-icon" aria-hidden="true">⚙</span>
-                <span class="component-name">${component.name}</span>
-                <span class="component-category">${component.category}</span>
-                <span class="component-meta">${component.energy > 0 ? '+' : ''}${component.energy}W · ${component.cost} credits</span>
-            `;
-
-            card.title = `${component.name} — ${component.energy > 0 ? '+' : ''}${component.energy}W · ${component.cost} credits`;
-            card.addEventListener('click', () => {
-                const index = app.store.getState().components.length;
-                const x = 220 + (index % 5) * 170;
-                const y = 160 + Math.floor(index / 5) * 120;
-                const result = app.store.addComponent(type, x, y);
-                if (!result.ok) {
-                    addFeedback(result.reason === 'budget' ? 'Not enough credits for this component.' : 'Component could not be placed.', 'error');
-                    return;
-                }
-
-                app.telemetry.track('component_added', {
-                    experimentId: app.activeChallengeDefinition ? app.activeChallengeDefinition.id : null,
-                    componentType: type
-                });
-                addFeedback(`${component.name} added to design.`, 'success');
-            });
-
-            library.appendChild(card);
-
-        /* Focus mode toggle: hides panels and expands canvas for clearer interaction */
-        function setFocusMode(enabled) {
-            const root = document.documentElement;
-            document.body.classList.toggle('focus-mode', enabled);
-            const btn = byId('focusToggleBtn');
-            if (btn) {
-                btn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-                btn.textContent = enabled ? 'Exit Focus' : 'Focus';
-            }
-        }
-
-function toggleSidebar() {
+    function toggleSidebar() {
         const sidebar = document.querySelector('.sidebar');
         if (!sidebar) return;
         const isExpanded = sidebar.classList.toggle('expanded');
@@ -198,60 +147,106 @@ function toggleSidebar() {
             toggle.setAttribute('aria-pressed', isExpanded ? 'true' : 'false');
             toggle.textContent = isExpanded ? '⊖' : '⊕';
         }
-        }
+    }
 
-    // Initialize toggle button text
     function initToggleButtons() {
         const sidebarToggle = byId('toggleSidebarBtn');
         const rightToggle = byId('toggleRightPanelBtn');
         if (sidebarToggle) sidebarToggle.textContent = '◀';
         if (rightToggle) rightToggle.textContent = '⊖';
     }
-        }
 
-        function renderOnboardingStep() {
-            const overlay = document.getElementById('onboardingOverlay');
-            if (!overlay) return;
-            const step = ONBOARDING_STEPS[onboardingIndex];
-            overlay.querySelector('.onboarding-title').textContent = step.title;
-            overlay.querySelector('.onboarding-body').textContent = step.body;
-            overlay.querySelector('#onboardingPrev').disabled = onboardingIndex === 0;
-            overlay.querySelector('#onboardingNext').textContent = onboardingIndex === ONBOARDING_STEPS.length - 1 ? 'Done' : 'Next';
-        }
+    // ─── Component Library ────────────────────────────────────────────────────
 
-        function nextOnboarding() {
-            if (onboardingIndex < ONBOARDING_STEPS.length - 1) {
-                onboardingIndex += 1;
-                renderOnboardingStep();
-                return;
-            }
-            hideOnboarding();
-        }
+    function renderComponentFilters() {
+        const container = byId('componentFilters');
+        if (!container) return;
 
-        function prevOnboarding() {
-            if (onboardingIndex > 0) {
-                onboardingIndex -= 1;
-                renderOnboardingStep();
-            }
-        }
+        const categories = Array.from(new Set(Object.values(COMPONENTS).map((c) => c.category)));
+        const options = ['all', ...categories];
+
+        container.innerHTML = '';
+        options.forEach((category) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = `filter-chip${app.currentComponentFilter === category ? ' active' : ''}`;
+            button.textContent = category === 'all' ? 'All' : category.replace('_', ' ');
+            button.addEventListener('click', () => {
+                app.currentComponentFilter = category;
+                renderComponentFilters();
+                renderComponentLibrary();
+            });
+            container.appendChild(button);
         });
     }
 
-    function updateStatsDisplay(state) {
-        const budgetDisplay = byId('budgetDisplay');
-        const energyDisplay = byId('energyDisplay');
-        const pointsDisplay = byId('pointsDisplay');
+    function renderComponentLibrary() {
+        const library = byId('componentLibrary');
+        if (!library) return;
 
-        if (budgetDisplay) {
-            budgetDisplay.textContent = String(Math.max(0, Math.round(state.budget)));
-        }
-        if (energyDisplay) {
-            energyDisplay.textContent = String(Math.round(state.energy));
-        }
-        if (pointsDisplay) {
-            pointsDisplay.textContent = String(Math.round(state.points));
-        }
+        const state = app.store.getState();
+        library.innerHTML = '';
+
+        Object.entries(COMPONENTS).forEach(([type, component]) => {
+            if (app.currentComponentFilter !== 'all' && component.category !== app.currentComponentFilter) return;
+
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'component-item';
+            card.disabled = state.isSimulating;
+            card.setAttribute('aria-label', `Add ${component.name}`);
+
+            const energyColor = component.energy > 0 ? '#69ffb3' : component.energy < 0 ? '#ff9eb0' : '#aaaaaa';
+            const energyLabel = component.energy === 0 ? '—' : `${component.energy > 0 ? '+' : ''}${component.energy}W`;
+
+            card.innerHTML = `
+                <span class="component-icon" aria-hidden="true">${getCategoryIcon(component.category)}</span>
+                <span class="component-name">${component.name}</span>
+                <span class="component-category">${component.category.replace('_', ' ')}</span>
+                <span class="component-meta" style="color:${energyColor}">${energyLabel}</span>
+                <span class="component-cost">${component.cost} cr</span>
+            `;
+
+            card.title = `${component.name} — ${energyLabel} · ${component.cost} credits`;
+            card.addEventListener('click', () => {
+                const index = app.store.getState().components.length;
+                const x = 220 + (index % 5) * 180;
+                const y = 160 + Math.floor(index / 5) * 130;
+                const result = app.store.addComponent(type, x, y);
+                if (!result.ok) {
+                    addFeedback(
+                        result.reason === 'budget'
+                            ? `Not enough credits for ${component.name} (costs ${component.cost}).`
+                            : 'Component could not be placed.',
+                        'error'
+                    );
+                    return;
+                }
+                app.telemetry.track('component_added', {
+                    experimentId: app.activeChallengeDefinition ? app.activeChallengeDefinition.id : null,
+                    componentType: type
+                });
+                addFeedback(`${component.name} added. ${component.energy !== 0 ? (component.energy > 0 ? 'Generates power.' : 'Consumes power — connect with a Wire Link.') : ''}`, 'success');
+            });
+
+            library.appendChild(card);
+        });
     }
+
+    function getCategoryIcon(category) {
+        const icons = {
+            generation: '⚡',
+            storage: '🔋',
+            control: '🎛',
+            monitoring: '📡',
+            treatment: '💧',
+            critical_load: '🏗',
+            distribution: '〰'
+        };
+        return icons[category] || '⚙';
+    }
+
+    // ─── Simulation Buttons ────────────────────────────────────────────────────
 
     function updateSimulationButtons(state) {
         const runSimBtn = byId('runSimBtn');
@@ -261,25 +256,15 @@ function toggleSidebar() {
         const clearBtn = byId('clearBtn');
         const hintBtn = byId('hintBtn');
 
-        if (runSimBtn) {
-            runSimBtn.disabled = state.isSimulating || state.components.length === 0 || !app.activeChallenge;
-        }
-        if (stopSimBtn) {
-            stopSimBtn.disabled = !state.isSimulating;
-        }
-        if (saveBtn) {
-            saveBtn.disabled = state.isSimulating;
-        }
-        if (loadBtn) {
-            loadBtn.disabled = state.isSimulating;
-        }
-        if (clearBtn) {
-            clearBtn.disabled = state.isSimulating;
-        }
-        if (hintBtn) {
-            hintBtn.disabled = state.isSimulating || !app.activeChallenge;
-        }
+        if (runSimBtn) runSimBtn.disabled = state.isSimulating || state.components.length === 0 || !app.activeChallenge;
+        if (stopSimBtn) stopSimBtn.disabled = !state.isSimulating;
+        if (saveBtn) saveBtn.disabled = state.isSimulating;
+        if (loadBtn) loadBtn.disabled = state.isSimulating;
+        if (clearBtn) clearBtn.disabled = state.isSimulating;
+        if (hintBtn) hintBtn.disabled = state.isSimulating || !app.activeChallenge;
     }
+
+    // ─── Lab Panel Management ──────────────────────────────────────────────────
 
     function setLabPanel(panelName) {
         const panels = {
@@ -295,12 +280,10 @@ function toggleSidebar() {
             const tab = byId(ids.tabId);
             const panel = byId(ids.panelId);
             const isActive = name === nextPanel;
-
             if (tab) {
                 tab.classList.toggle('panel-tab-active', isActive);
                 tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
             }
-
             if (panel) {
                 panel.classList.toggle('panel-active', isActive);
                 panel.hidden = !isActive;
@@ -308,13 +291,13 @@ function toggleSidebar() {
         });
     }
 
+    // ─── Quick Steps ───────────────────────────────────────────────────────────
+
     function updateQuickSteps(state) {
         const stepBuild = byId('quickStepBuild');
         const stepBalance = byId('quickStepBalance');
         const stepRun = byId('quickStepRun');
-        if (!stepBuild || !stepBalance || !stepRun || !state) {
-            return;
-        }
+        if (!stepBuild || !stepBalance || !stepRun || !state) return;
 
         const hasComponents = state.components.length > 0;
         const hasPositiveEnergy = state.energy > 0;
@@ -325,11 +308,11 @@ function toggleSidebar() {
         stepRun.classList.toggle('step-complete', hasRun);
     }
 
+    // ─── Map Screen ────────────────────────────────────────────────────────────
+
     function renderMap() {
         const mapContainer = byId('tierMap');
-        if (!mapContainer || !app.progression) {
-            return;
-        }
+        if (!mapContainer || !app.progression) return;
 
         const state = app.store.getState();
         const campaign = state.campaign;
@@ -343,12 +326,15 @@ function toggleSidebar() {
             const heading = document.createElement('div');
             heading.className = 'tier-heading';
             const title = document.createElement('h3');
-            title.textContent = `Tier ${tierNumber}`;
-            const summary = document.createElement('span');
 
+            const tierLabels = { 1: 'Tier 1 — Foundations', 2: 'Tier 2 — Intermediate', 3: 'Tier 3 — Advanced' };
+            title.textContent = tierLabels[tierNumber] || `Tier ${tierNumber}`;
+
+            const summary = document.createElement('span');
             const tierChallenges = tiers[tierNumber] || [];
-            const completeCount = tierChallenges.filter((challenge) => campaign.completedExperiments[challenge.id] && campaign.completedExperiments[challenge.id].passed).length;
+            const completeCount = tierChallenges.filter((c) => campaign.completedExperiments[c.id]?.passed).length;
             summary.textContent = `${completeCount}/${tierChallenges.length} complete`;
+            summary.className = completeCount === tierChallenges.length && tierChallenges.length > 0 ? 'tier-badge tier-complete' : 'tier-badge';
 
             heading.appendChild(title);
             heading.appendChild(summary);
@@ -361,21 +347,33 @@ function toggleSidebar() {
                 const isUnlocked = campaign.unlockedExperiments.includes(challengeDefinition.id);
                 const stars = campaign.starsByExperiment[challengeDefinition.id] || 0;
                 const challengeState = campaign.completedExperiments[challengeDefinition.id];
+                const isPassed = challengeState && challengeState.passed;
+                const isActive = campaign.currentExperimentId === challengeDefinition.id;
 
                 const node = document.createElement('button');
                 node.type = 'button';
-                node.className = `map-node${isUnlocked ? '' : ' locked'}`;
+                node.className = [
+                    'map-node',
+                    !isUnlocked ? 'locked' : '',
+                    isPassed ? 'passed' : '',
+                    isActive ? 'active-node' : ''
+                ].filter(Boolean).join(' ');
                 node.disabled = !isUnlocked;
 
-                const starText = stars > 0 ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '☆☆☆';
-                const statusText = challengeState && challengeState.passed ? 'Passed' : isUnlocked ? 'Ready' : 'Locked';
+                const starText = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+                const statusText = isPassed ? 'Complete' : isUnlocked ? 'Ready' : '🔒 Locked';
+                const difficultyColors = { starter: '#69ffb3', intermediate: '#ffd47e', advanced: '#ff9eb0' };
+                const diffColor = difficultyColors[challengeDefinition.difficulty] || '#aaa';
+
                 node.innerHTML = `
                     <div class="node-head">
                         <div class="node-title">${challengeDefinition.title}</div>
-                        <span class="node-pill">${challengeDefinition.estimatedMinutes}m</span>
+                        <span class="node-pill" style="background:${diffColor}">${challengeDefinition.estimatedMinutes}m</span>
                     </div>
+                    <div class="node-difficulty" style="color:${diffColor}">${challengeDefinition.difficulty}</div>
                     <div class="node-meta">${statusText}</div>
-                    <div class="node-stars">${starText}</div>
+                    <div class="node-stars" aria-label="${stars} stars">${starText}</div>
+                    ${isPassed && challengeState.score ? `<div class="node-score">Score: ${Math.round(challengeState.score)}</div>` : ''}
                 `;
 
                 node.addEventListener('click', () => {
@@ -390,12 +388,11 @@ function toggleSidebar() {
         });
     }
 
+    // ─── Briefing Screen ───────────────────────────────────────────────────────
+
     function renderBriefing(challengeId) {
         const definition = app.progression.getChallenge(challengeId);
-        if (!definition) {
-            app.router.replace('map');
-            return;
-        }
+        if (!definition) { app.router.replace('map'); return; }
 
         byId('briefTitle').textContent = definition.title;
         byId('briefDescription').textContent = definition.description;
@@ -405,14 +402,15 @@ function toggleSidebar() {
         const meta = byId('briefMeta');
         meta.innerHTML = '';
         [
-            `Tier ${definition.tier}`,
-            definition.difficulty,
-            `${definition.estimatedMinutes} mins`,
-            `Pass score ${definition.passScore}`
-        ].forEach((entry) => {
+            { label: `Tier ${definition.tier}`, color: '#59e7ff' },
+            { label: definition.difficulty, color: definition.difficulty === 'starter' ? '#69ffb3' : definition.difficulty === 'intermediate' ? '#ffd47e' : '#ff9eb0' },
+            { label: `${definition.estimatedMinutes} min`, color: '' },
+            { label: `Pass: ${definition.passScore}pts`, color: '' }
+        ].forEach(({ label, color }) => {
             const pill = document.createElement('span');
             pill.className = 'meta-pill';
-            pill.textContent = entry;
+            if (color) pill.style.borderColor = color;
+            pill.textContent = label;
             meta.appendChild(pill);
         });
 
@@ -427,11 +425,11 @@ function toggleSidebar() {
         const scenario = byId('briefScenario');
         scenario.innerHTML = '';
         const scenarioItems = [
-            `Weather: ${definition.scenario.weather}`,
-            `Demand spike: x${definition.scenario.demandSpike}`,
-            `Time of day: ${definition.scenario.timeOfDay}`,
-            `Outage: ${definition.scenario.outageWindow.enabled ? `enabled (${Math.round(definition.scenario.outageWindow.severity * 100)}% severity)` : 'none'}`,
-            `Budget cap: ${definition.scenario.budgetCap} credits`
+            `🌦 Weather: ${definition.scenario.weather}`,
+            `⚡ Demand: ×${definition.scenario.demandSpike}`,
+            `🕐 Time: ${definition.scenario.timeOfDay}`,
+            `⚠ Outage: ${definition.scenario.outageWindow.enabled ? `${Math.round(definition.scenario.outageWindow.severity * 100)}% severity` : 'None'}`,
+            `💰 Budget: ${definition.scenario.budgetCap} credits`
         ];
         scenarioItems.forEach((line) => {
             const li = document.createElement('li');
@@ -447,26 +445,26 @@ function toggleSidebar() {
             hints.appendChild(li);
         });
 
-        const startButton = byId('briefStartBtn');
-        startButton.onclick = () => {
-            startExperiment(definition.id);
-        };
+        // Store the challenge id on the button — the event listener in bindButtons() reads this
+        byId('briefStartBtn').dataset.challengeId = definition.id;
     }
+
+    // ─── Scenario Panel ────────────────────────────────────────────────────────
 
     function renderScenarioPanel(challengeDefinition) {
         const panel = byId('scenarioPanel');
-        if (!panel || !challengeDefinition) {
-            return;
-        }
-
-        const scenario = challengeDefinition.scenario;
+        if (!panel || !challengeDefinition) return;
+        const s = challengeDefinition.scenario;
         panel.innerHTML = `
-            <div class="section-title">Scenario Status</div>
+            <div class="section-title">Scenario Conditions</div>
             <ul>
-                <li>Weather: ${scenario.weather}</li>
-                <li>Demand Multiplier: x${scenario.demandSpike}</li>
-                <li>Outage: ${scenario.outageWindow.enabled ? `${Math.round(scenario.outageWindow.severity * 100)}% severity` : 'No outage event'}</li>
-                <li>Target Budget: ${scenario.budgetCap} credits</li>
+                <li>🌦 Weather: <strong>${s.weather}</strong></li>
+                <li>⚡ Demand spike: <strong>×${s.demandSpike}</strong></li>
+                <li>⚠ Outage: <strong>${s.outageWindow.enabled ? `${Math.round(s.outageWindow.severity * 100)}% severity` : 'None'}</strong></li>
+                <li>💰 Budget cap: <strong>${s.budgetCap} credits</strong></li>
+                ${s.throughputTarget ? `<li>🎯 Throughput target: <strong>${s.throughputTarget}</strong></li>` : ''}
+                ${s.reserveTarget ? `<li>🔋 Reserve target: <strong>${(s.reserveTarget * 100).toFixed(0)}%</strong></li>` : ''}
+                ${s.carbonTarget ? `<li>🌱 Carbon target: <strong>≤${s.carbonTarget}</strong></li>` : ''}
             </ul>
         `;
     }
@@ -477,61 +475,128 @@ function toggleSidebar() {
         renderScenarioPanel(challengeDefinition);
     }
 
+    // ─── Results Screen ────────────────────────────────────────────────────────
+
     function renderResults(result) {
-        if (!result || !app.activeChallengeDefinition) {
-            app.router.replace('map');
-            return;
+        if (!result || !app.activeChallengeDefinition) { app.router.replace('map'); return; }
+
+        const def = app.activeChallengeDefinition;
+        const passed = result.passed;
+        const stars = app.progression.calculateStars(result.score, result.passScore);
+
+        // Set result card state class for pass/fail styling
+        const resultCard = document.querySelector('.result-card');
+        if (resultCard) {
+            resultCard.classList.toggle('result-passed', passed);
+            resultCard.classList.toggle('result-failed', !passed);
         }
 
-        byId('resultExperimentTitle').textContent = app.activeChallengeDefinition.title;
-        byId('resultScore').textContent = `${Math.round(result.score)}/100`;
-        byId('resultNarrative').textContent = result.successNarrative || (result.passed ? 'Great build.' : 'Try a better design.');
+        byId('resultExperimentTitle').textContent = def.title;
 
-        const stars = app.progression.calculateStars(result.score, result.passScore);
-        byId('resultStars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+        // Score display with color
+        const scoreEl = byId('resultScore');
+        scoreEl.textContent = `${Math.round(result.score)}/100`;
+        scoreEl.className = `result-score ${passed ? 'score-pass' : 'score-fail'}`;
 
+        // Stars
+        const starsEl = byId('resultStars');
+        starsEl.innerHTML = '';
+        for (let i = 1; i <= 3; i++) {
+            const star = document.createElement('span');
+            star.className = `result-star ${i <= stars ? 'star-filled' : 'star-empty'}`;
+            star.textContent = i <= stars ? '★' : '☆';
+            starsEl.appendChild(star);
+        }
+
+        // Pass/fail banner
+        const bannerEl = byId('resultBanner');
+        if (bannerEl) {
+            bannerEl.className = `result-banner ${passed ? 'banner-pass' : 'banner-fail'}`;
+            bannerEl.textContent = passed ? '✓ Experiment Passed!' : '✗ Not quite — keep building!';
+        }
+
+        byId('resultNarrative').textContent = result.successNarrative || (passed ? def.debrief.success : def.debrief.improve);
+
+        // Objective breakdown — rich display
         const feedback = byId('resultFeedback');
         feedback.innerHTML = '';
-        result.feedback.forEach((entry) => {
+
+        // Score breakdown header
+        const breakdownHeader = document.createElement('div');
+        breakdownHeader.className = 'result-breakdown-header';
+        breakdownHeader.textContent = 'Objective Breakdown';
+        feedback.appendChild(breakdownHeader);
+
+        result.objectiveResults.forEach((objResult) => {
             const item = document.createElement('div');
-            item.className = 'result-feedback-item';
-            item.textContent = entry.message;
+            item.className = `result-obj-item ${objResult.complete ? 'obj-pass' : 'obj-fail'}`;
+
+            const pctBar = Math.round((objResult.weight / result.objectiveResults.reduce((s, r) => s + r.weight, 0)) * 100);
+
+            item.innerHTML = `
+                <div class="result-obj-row">
+                    <span class="result-obj-icon">${objResult.complete ? '✓' : '✗'}</span>
+                    <span class="result-obj-text">${objResult.text}</span>
+                    <span class="result-obj-pts">${objResult.complete ? '+' : ''}${objResult.complete ? objResult.weight : 0}/${objResult.weight}pts</span>
+                </div>
+                <div class="result-obj-detail">${objResult.detail}</div>
+                <div class="result-obj-bar-wrap">
+                    <div class="result-obj-bar ${objResult.complete ? 'bar-pass' : 'bar-fail'}" style="width:${objResult.complete ? pctBar : 0}%"></div>
+                </div>
+            `;
             feedback.appendChild(item);
         });
 
-        const nextId = app.progression.getNextChallengeId(app.activeChallengeDefinition.id);
+        // Unlock info
+        if (result.unlocks && result.unlocks.length > 0) {
+            const unlockDiv = document.createElement('div');
+            unlockDiv.className = 'result-unlocks';
+            const unlockNames = result.unlocks.map((id) => {
+                const ch = app.progression.getChallenge(id);
+                return ch ? ch.title : id;
+            });
+            unlockDiv.innerHTML = `🔓 Unlocked: <strong>${unlockNames.join(', ')}</strong>`;
+            feedback.appendChild(unlockDiv);
+        }
+
+        // Badge earned
+        if (passed && def.unlockRewards.badge) {
+            const badgeDiv = document.createElement('div');
+            badgeDiv.className = 'result-badge-earned';
+            badgeDiv.innerHTML = `🏅 Badge earned: <strong>${def.unlockRewards.badge}</strong>`;
+            feedback.appendChild(badgeDiv);
+        }
+
+        // Store next destination on the button — the event listener in bindButtons() reads this
+        const nextId = app.progression.getNextChallengeId(def.id);
         const nextBtn = byId('resultNextBtn');
-        nextBtn.disabled = !nextId;
-        nextBtn.onclick = () => {
-            const candidate = result.unlocks && result.unlocks.length > 0 ? result.unlocks[0] : nextId;
-            if (candidate) {
-                app.router.navigate('briefing', { challengeId: candidate });
-            } else {
-                app.router.navigate('map');
-            }
-        };
+        const candidate = result.unlocks && result.unlocks.length > 0 ? result.unlocks[0] : nextId;
+        nextBtn.disabled = !candidate;
+        nextBtn.dataset.nextId = candidate || '';
     }
+
+    // ─── Progress Screen ───────────────────────────────────────────────────────
 
     function renderProgress() {
         const state = app.store.getState();
         const campaign = state.campaign;
-
         const summary = app.progression.getCampaignSummary(campaign);
+
         const summaryContainer = byId('progressSummary');
         summaryContainer.innerHTML = '';
 
         const summaryItems = [
-            `Completed experiments: ${summary.completedExperiments}/${summary.totalExperiments}`,
-            `Stars: ${summary.totalStars}/${summary.maxStars}`,
-            `Mastery score: ${Math.round(state.points)}/100`,
-            `Simulation runs: ${state.sessionStats.runs}`,
-            `Passes: ${state.sessionStats.passes} · Fails: ${state.sessionStats.fails}`
+            { label: 'Experiments Completed', value: `${summary.completedExperiments}/${summary.totalExperiments}`, icon: '🧪' },
+            { label: 'Stars Earned', value: `${summary.totalStars}/${summary.maxStars}`, icon: '⭐' },
+            { label: 'Mastery Score', value: `${Math.round(state.points)}/100`, icon: '📊' },
+            { label: 'Simulation Runs', value: state.sessionStats.runs, icon: '▶' },
+            { label: 'Pass Rate', value: state.sessionStats.runs > 0 ? `${Math.round((state.sessionStats.passes / state.sessionStats.runs) * 100)}%` : '—', icon: '✓' }
         ];
 
-        summaryItems.forEach((entry) => {
+        summaryItems.forEach(({ label, value, icon }) => {
             const strip = document.createElement('div');
             strip.className = 'progress-strip';
-            strip.textContent = entry;
+            strip.innerHTML = `<span class="progress-icon">${icon}</span><span class="progress-label">${label}</span><strong class="progress-value">${value}</strong>`;
             summaryContainer.appendChild(strip);
         });
 
@@ -540,7 +605,11 @@ function toggleSidebar() {
         app.progression.buildTierProgress(campaign).forEach((tier) => {
             const strip = document.createElement('div');
             strip.className = 'tier-strip';
-            strip.textContent = `Tier ${tier.tier}: ${tier.completed}/${tier.total} complete (${Math.round(tier.progress * 100)}%)`;
+            const pct = Math.round(tier.progress * 100);
+            strip.innerHTML = `
+                <div class="tier-strip-label">Tier ${tier.tier}: <strong>${tier.completed}/${tier.total}</strong></div>
+                <div class="tier-progress-bar-wrap"><div class="tier-progress-bar" style="width:${pct}%"></div></div>
+            `;
             tierContainer.appendChild(strip);
         });
 
@@ -548,14 +617,14 @@ function toggleSidebar() {
         badges.innerHTML = '';
         if (!campaign.badges || campaign.badges.length === 0) {
             const none = document.createElement('div');
-            none.className = 'badge-item';
-            none.textContent = 'No badges earned yet. Complete experiments to unlock rewards.';
+            none.className = 'badge-item badge-empty';
+            none.textContent = 'No badges yet — complete experiments to unlock them!';
             badges.appendChild(none);
         } else {
             campaign.badges.forEach((badge) => {
                 const badgeItem = document.createElement('div');
                 badgeItem.className = 'badge-item';
-                badgeItem.textContent = `🏅 ${badge}`;
+                badgeItem.innerHTML = `🏅 <strong>${badge}</strong>`;
                 badges.appendChild(badgeItem);
             });
         }
@@ -566,6 +635,8 @@ function toggleSidebar() {
         }
     }
 
+    // ─── Achievement PNG ───────────────────────────────────────────────────────
+
     function exportAchievementPng() {
         const state = app.store.getState();
         const campaign = state.campaign;
@@ -574,20 +645,14 @@ function toggleSidebar() {
         const playerName = sanitizePlayerName(playerInput ? playerInput.value : '');
         const exportDate = new Date();
 
-        if (playerInput) {
-            playerInput.value = playerName;
-        }
+        if (playerInput) playerInput.value = playerName;
         savePlayerName(playerName);
 
         const canvas = document.createElement('canvas');
         canvas.width = 1600;
         canvas.height = 900;
         const ctx = canvas.getContext('2d');
-
-        if (!ctx) {
-            addFeedback('Certificate export is unavailable in this browser.', 'error');
-            return;
-        }
+        if (!ctx) { addFeedback('Certificate export unavailable in this browser.', 'error'); return; }
 
         const bgGradient = ctx.createLinearGradient(0, 0, 1600, 900);
         bgGradient.addColorStop(0, '#0b2648');
@@ -635,20 +700,18 @@ function toggleSidebar() {
         ctx.fillText('Campaign Performance', 140, 446);
 
         const lines = [
-            `Completed Experiments: ${summary.completedExperiments}/${summary.totalExperiments}`,
-            `Total Stars Earned: ${summary.totalStars}/${summary.maxStars}`,
-            `Mastery Score: ${Math.round(state.points)}/100`,
-            `Simulation Runs: ${state.sessionStats.runs}`,
-            `Badges Unlocked: ${campaign.badges.length}`
+            `Completed: ${summary.completedExperiments}/${summary.totalExperiments} experiments`,
+            `Stars: ${summary.totalStars}/${summary.maxStars}`,
+            `Mastery: ${Math.round(state.points)}/100`,
+            `Runs: ${state.sessionStats.runs}`,
+            `Badges: ${campaign.badges.length}`
         ];
 
         ctx.fillStyle = '#eaf7ff';
         ctx.font = '600 28px "Segoe UI", sans-serif';
-        lines.forEach((line, index) => {
-            ctx.fillText(line, 140, 500 + (index * 48));
-        });
+        lines.forEach((line, i) => ctx.fillText(line, 140, 500 + i * 48));
 
-        const badgePreview = campaign.badges.slice(0, 3).join(' | ') || 'Keep building to unlock your first badge';
+        const badgePreview = campaign.badges.slice(0, 3).join(' | ') || 'Keep building to earn your first badge';
         ctx.fillStyle = '#ffd47e';
         ctx.font = '600 24px "Segoe UI", sans-serif';
         ctx.fillText(`Featured Badges: ${badgePreview}`, 140, 748);
@@ -665,56 +728,49 @@ function toggleSidebar() {
         ctx.textAlign = 'left';
 
         const safeName = playerName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        const filename = `tech-builders-achievement-${safeName || 'player'}.png`;
-        downloadDataUrl(filename, canvas.toDataURL('image/png'));
+        downloadDataUrl(`tech-builders-achievement-${safeName || 'player'}.png`, canvas.toDataURL('image/png'));
 
-        app.telemetry.track('achievement_exported', {
-            playerName,
-            completedExperiments: summary.completedExperiments,
-            stars: summary.totalStars
-        });
+        app.telemetry.track('achievement_exported', { playerName, completedExperiments: summary.completedExperiments, stars: summary.totalStars });
         addFeedback('Achievement PNG downloaded.', 'success');
     }
 
+    // ─── About Screen ──────────────────────────────────────────────────────────
+
     function ensureAboutScreen() {
-        if (app.aboutInitialized) {
-            return;
-        }
+        if (app.aboutInitialized) return;
         AboutPage.renderAbout(byId('aboutContent'));
         app.aboutInitialized = true;
     }
 
+    // ─── Objective Preview ─────────────────────────────────────────────────────
+
     function applyPreviewObjectives() {
-        if (!app.simulation || !app.activeChallenge || app.evaluatingPreview) {
-            return;
-        }
-        
+        if (!app.simulation || !app.activeChallenge || app.evaluatingPreview) return;
         try {
             app.evaluatingPreview = true;
+            const state = app.store.getState();
             const preview = app.simulation.previewObjectives();
-            app.activeChallenge.updateObjectiveUI(preview.objectiveResults);
+            if (preview) {
+                app.activeChallenge.updateObjectiveUI(preview.objectiveResults, state, preview.metrics);
+            }
         } catch (error) {
             console.error('Preview evaluation failed:', error.message);
-            addFeedback('System evaluation error. Try adjusting your design.', 'warning');
         } finally {
             app.evaluatingPreview = false;
         }
     }
 
+    // ─── Experiment Flow ───────────────────────────────────────────────────────
+
     function calculateHighestTierUnlocked(unlockedIds) {
         return unlockedIds.reduce((maxTier, experimentId) => {
             const definition = app.progression.getChallenge(experimentId);
-            if (!definition) {
-                return maxTier;
-            }
-            return Math.max(maxTier, definition.tier);
+            return definition ? Math.max(maxTier, definition.tier) : maxTier;
         }, 1);
     }
 
     function applySimulationResult(result) {
-        if (!result || !app.activeChallengeDefinition) {
-            return;
-        }
+        if (!result || !app.activeChallengeDefinition) return;
 
         const state = app.store.getState();
         const stars = app.progression.calculateStars(result.score, result.passScore);
@@ -732,9 +788,7 @@ function toggleSidebar() {
             completedAt: new Date().toISOString()
         });
 
-        if (unlocks.length > 0) {
-            app.store.addUnlockedExperiments(unlocks);
-        }
+        if (unlocks.length > 0) app.store.addUnlockedExperiments(unlocks);
 
         result.objectiveResults.forEach((objectiveResult) => {
             if (objectiveResult.complete) {
@@ -751,20 +805,13 @@ function toggleSidebar() {
             stars
         });
 
-        app.lastResult = {
-            ...result,
-            stars,
-            unlocks
-        };
-
+        app.lastResult = { ...result, stars, unlocks };
         app.router.navigate('results', { challengeId: app.activeChallengeDefinition.id });
     }
 
     function startExperiment(challengeId) {
         const definition = app.progression.getChallenge(challengeId);
-        if (!definition) {
-            return;
-        }
+        if (!definition) return;
 
         app.activeChallengeDefinition = definition;
         app.activeChallenge = new Challenge(definition);
@@ -776,21 +823,22 @@ function toggleSidebar() {
         renderComponentFilters();
         renderComponentLibrary();
         clearFeedback();
-        addFeedback(`Experiment started: ${definition.title}`, 'info');
+        addFeedback(`🚀 Experiment started: ${definition.title}`, 'info');
+        addFeedback(`🎯 Pass score: ${definition.passScore}/100 — check the objectives panel for details.`, 'info');
         applyPreviewObjectives();
 
         app.currentHintIndex = 0;
-        app.activeLabPanel = 'objectives';
         setLabPanel('objectives');
         updateQuickSteps(app.store.getState());
         app.telemetry.track('experiment_started', { experimentId: challengeId, tier: definition.tier });
-
         app.router.navigate('lab', { challengeId });
     }
 
+    // ─── Simulation Control ────────────────────────────────────────────────────
+
     function onRunSimulation() {
         if (!app.activeChallengeDefinition) {
-            addFeedback('Select an experiment before simulation.', 'warning');
+            addFeedback('Select an experiment from the map before simulating.', 'warning');
             return;
         }
 
@@ -801,42 +849,87 @@ function toggleSidebar() {
 
         app.simulation.start({
             durationMs: GAME_CONFIG.defaultSimulationDurationMs,
-            onComplete: (result) => {
-                applySimulationResult(result);
-            }
+            onComplete: (result) => applySimulationResult(result)
         });
     }
 
+    // ─── Hint System ───────────────────────────────────────────────────────────
+
     function showHint() {
-        if (!app.activeChallengeDefinition) {
-            return;
-        }
-
+        if (!app.activeChallengeDefinition) return;
         const hints = app.activeChallengeDefinition.briefing.hints || [];
-        if (hints.length === 0) {
-            addFeedback('No hints available for this experiment.', 'info');
-            return;
-        }
-
+        if (hints.length === 0) { addFeedback('No hints available for this experiment.', 'info'); return; }
         const hint = hints[app.currentHintIndex % hints.length];
         app.currentHintIndex += 1;
         app.store.recordHintUsed();
-        app.telemetry.track('hint_used', {
-            experimentId: app.activeChallengeDefinition.id,
-            hintIndex: app.currentHintIndex
-        });
+        app.telemetry.track('hint_used', { experimentId: app.activeChallengeDefinition.id, hintIndex: app.currentHintIndex });
         setLabPanel('feedback');
-        addFeedback(`Hint: ${hint}`, 'info');
+        addFeedback(`💡 Hint ${app.currentHintIndex}: ${hint}`, 'info');
     }
+
+    // ─── Onboarding ────────────────────────────────────────────────────────────
+
+    function renderOnboardingStep() {
+        const overlay = byId('onboardingOverlay');
+        if (!overlay || !ONBOARDING_STEPS || ONBOARDING_STEPS.length === 0) return;
+        const step = ONBOARDING_STEPS[app.onboardingIndex];
+        if (!step) return;
+        const titleEl = overlay.querySelector('.onboarding-title');
+        const bodyEl = overlay.querySelector('.onboarding-body');
+        const prevBtn = overlay.querySelector('#onboardingPrev');
+        const nextBtn = overlay.querySelector('#onboardingNext');
+        const counterEl = overlay.querySelector('.onboarding-counter');
+        if (titleEl) titleEl.textContent = step.title;
+        if (bodyEl) bodyEl.textContent = step.body;
+        if (prevBtn) prevBtn.disabled = app.onboardingIndex === 0;
+        if (nextBtn) nextBtn.textContent = app.onboardingIndex === ONBOARDING_STEPS.length - 1 ? 'Start Building!' : 'Next →';
+        if (counterEl) counterEl.textContent = `${app.onboardingIndex + 1} / ${ONBOARDING_STEPS.length}`;
+    }
+
+    function showOnboarding() {
+        const overlay = byId('onboardingOverlay');
+        if (!overlay) return;
+        app.onboardingIndex = 0;
+        renderOnboardingStep();
+        overlay.hidden = false;
+    }
+
+    function hideOnboarding() {
+        const overlay = byId('onboardingOverlay');
+        if (overlay) overlay.hidden = true;
+    }
+
+    function nextOnboarding() {
+        if (!ONBOARDING_STEPS) return;
+        if (app.onboardingIndex < ONBOARDING_STEPS.length - 1) {
+            app.onboardingIndex += 1;
+            renderOnboardingStep();
+        } else {
+            hideOnboarding();
+        }
+    }
+
+    function prevOnboarding() {
+        if (app.onboardingIndex > 0) {
+            app.onboardingIndex -= 1;
+            renderOnboardingStep();
+        }
+    }
+
+    // Expose for onboarding.js
+    window.nextOnboarding = nextOnboarding;
+    window.prevOnboarding = prevOnboarding;
+    window.hideOnboarding = hideOnboarding;
+    window.showOnboarding = showOnboarding;
+
+    // ─── Button Bindings ───────────────────────────────────────────────────────
 
     function bindButtons() {
         byId('enterModeBtn').addEventListener('click', () => app.router.navigate('mode'));
 
         byId('startCampaignBtn').addEventListener('click', () => {
             const firstId = app.progression.getFirstChallengeId();
-            if (firstId) {
-                app.store.addUnlockedExperiments([firstId]);
-            }
+            if (firstId) app.store.addUnlockedExperiments([firstId]);
             app.router.navigate('map');
         });
 
@@ -851,7 +944,7 @@ function toggleSidebar() {
                     app.router.navigate('map');
                 }
             } else {
-                addFeedback('No valid save found. Starting from map.', 'warning');
+                addFeedback('No save found. Starting fresh.', 'warning');
                 app.router.navigate('map');
             }
         });
@@ -859,42 +952,29 @@ function toggleSidebar() {
         byId('howToPlayBtn').addEventListener('click', () => app.router.navigate('help'));
         byId('aboutBtn').addEventListener('click', () => app.router.navigate('about'));
         byId('helpBackBtn').addEventListener('click', () => app.router.back('mode'));
-
         byId('mapToModeBtn').addEventListener('click', () => app.router.navigate('mode'));
         byId('mapToProgressBtn').addEventListener('click', () => app.router.navigate('progress'));
         byId('mapToAboutBtn').addEventListener('click', () => app.router.navigate('about'));
-
         byId('briefBackBtn').addEventListener('click', () => app.router.navigate('map'));
-
         byId('labToMapBtn').addEventListener('click', () => app.router.navigate('map'));
         byId('labToProgressBtn').addEventListener('click', () => app.router.navigate('progress'));
         byId('labToAboutBtn').addEventListener('click', () => app.router.navigate('about'));
 
         const focusBtn = byId('focusToggleBtn');
-        if (focusBtn) {
-            focusBtn.addEventListener('click', () => setFocusMode(!document.body.classList.contains('focus-mode')));
-        }
+        if (focusBtn) focusBtn.addEventListener('click', () => setFocusMode(!document.body.classList.contains('focus-mode')));
 
         const toggleSidebarBtnEl = byId('toggleSidebarBtn');
-        if (toggleSidebarBtnEl) {
-            toggleSidebarBtnEl.addEventListener('click', () => toggleSidebar());
-        }
+        if (toggleSidebarBtnEl) toggleSidebarBtnEl.addEventListener('click', toggleSidebar);
 
         const toggleRightPanelBtnEl = byId('toggleRightPanelBtn');
-        if (toggleRightPanelBtnEl) {
-            toggleRightPanelBtnEl.addEventListener('click', () => toggleRightPanel());
-        }
+        if (toggleRightPanelBtnEl) toggleRightPanelBtnEl.addEventListener('click', toggleRightPanel);
 
         byId('runSimBtn').addEventListener('click', onRunSimulation);
         byId('stopSimBtn').addEventListener('click', () => app.simulation.stop(true));
 
         byId('saveBtn').addEventListener('click', () => {
             const result = app.store.save();
-            if (result.ok) {
-                addFeedback('Campaign saved locally.', 'success');
-            } else {
-                addFeedback(`Save failed: ${result.error}`, 'error');
-            }
+            addFeedback(result.ok ? '💾 Campaign saved.' : `Save failed: ${result.error}`, result.ok ? 'success' : 'error');
         });
 
         byId('loadBtn').addEventListener('click', () => {
@@ -905,14 +985,12 @@ function toggleSidebar() {
                 addFeedback('Save loaded successfully.', 'success');
                 applyPreviewObjectives();
             } else {
-                addFeedback('Load failed.', 'error');
+                addFeedback('Load failed — no save found.', 'error');
             }
         });
 
         byId('clearBtn').addEventListener('click', () => {
-            if (!confirm('Clear current build?')) {
-                return;
-            }
+            if (!confirm('Clear current build? This cannot be undone.')) return;
             app.store.clearAll();
             addFeedback('Build canvas cleared.', 'info');
             applyPreviewObjectives();
@@ -924,9 +1002,7 @@ function toggleSidebar() {
         byId('panelTabFeedback').addEventListener('click', () => setLabPanel('feedback'));
 
         byId('resultRetryBtn').addEventListener('click', () => {
-            if (app.activeChallengeDefinition) {
-                startExperiment(app.activeChallengeDefinition.id);
-            }
+            if (app.activeChallengeDefinition) startExperiment(app.activeChallengeDefinition.id);
         });
 
         byId('resultMapBtn').addEventListener('click', () => app.router.navigate('map'));
@@ -936,7 +1012,7 @@ function toggleSidebar() {
 
         byId('exportTelemetryBtn').addEventListener('click', () => {
             downloadJson('techbuilders-pilot-data.json', app.telemetry.exportPayload());
-            addFeedback('Pilot analytics exported.', 'success');
+            addFeedback('Pilot data exported.', 'success');
         });
 
         byId('exportAchievementBtn').addEventListener('click', exportAchievementPng);
@@ -945,26 +1021,39 @@ function toggleSidebar() {
         });
 
         byId('clearTelemetryBtn').addEventListener('click', () => {
-            if (!confirm('Clear all local pilot analytics?')) {
-                return;
-            }
+            if (!confirm('Clear all pilot analytics? This cannot be undone.')) return;
             app.telemetry.clear();
             app.store.clearAnalyticsLog();
-            addFeedback('Pilot analytics cleared.', 'warning');
+            addFeedback('Pilot data cleared.', 'warning');
             renderProgress();
         });
 
-        // Make Run Simulation more prominent: floating in canvas area
-        const runBtn = byId('runSimBtn');
-        const canvasArea = document.querySelector('.canvas-area');
-        if (runBtn && canvasArea) {
-            runBtn.classList.add('floating-run');
-            // ensure click still triggers simulation
-            runBtn.addEventListener('click', (e) => {
-                if (typeof onRunSimulation === 'function') onRunSimulation(e);
-            });
-        }
+        // ── Onboarding buttons ─────────────────────────────────────────────────
+        // These are wired once here so they always work regardless of overlay state
+        const onboardingNextBtn = byId('onboardingNext');
+        const onboardingPrevBtn = byId('onboardingPrev');
+        const onboardingSkipBtn = byId('onboardingSkip');
+        if (onboardingNextBtn) onboardingNextBtn.addEventListener('click', () => nextOnboarding());
+        if (onboardingPrevBtn) onboardingPrevBtn.addEventListener('click', () => prevOnboarding());
+        if (onboardingSkipBtn) onboardingSkipBtn.addEventListener('click', () => hideOnboarding());
+
+        // ── Briefing start: bound once via delegation on the static button ────
+        byId('briefStartBtn').addEventListener('click', () => {
+            const btn = byId('briefStartBtn');
+            const challengeId = btn.dataset.challengeId;
+            if (challengeId) startExperiment(challengeId);
+        });
+
+        // ── Results next: bound once, reads target from data attribute ─────────
+        byId('resultNextBtn').addEventListener('click', () => {
+            const btn = byId('resultNextBtn');
+            const target = btn.dataset.nextId;
+            if (target) app.router.navigate('briefing', { challengeId: target });
+            else app.router.navigate('map');
+        });
     }
+
+    // ─── Route Handling ────────────────────────────────────────────────────────
 
     function setupRouteHandling() {
         app.router.onChange((route) => {
@@ -975,21 +1064,20 @@ function toggleSidebar() {
             } else if (route.name === 'briefing') {
                 renderBriefing(route.params.challengeId);
             } else if (route.name === 'lab') {
-                // Expand panels by default on entering lab
+                // Expand both panels by default when entering lab
                 const sidebar = document.querySelector('.sidebar');
                 const rightPanel = document.querySelector('.right-panel');
-                if (sidebar) sidebar.classList.add('expanded');
-                if (rightPanel) rightPanel.classList.add('expanded');
-                if (byId('toggleSidebarBtn')) {
-                    byId('toggleSidebarBtn').setAttribute('aria-pressed', 'true');
-                    byId('toggleSidebarBtn').textContent = '◀';
+                if (sidebar && !sidebar.classList.contains('expanded')) {
+                    sidebar.classList.add('expanded');
+                    const toggle = byId('toggleSidebarBtn');
+                    if (toggle) { toggle.setAttribute('aria-pressed', 'true'); toggle.textContent = '◀'; }
                 }
-                if (byId('toggleRightPanelBtn')) {
-                    byId('toggleRightPanelBtn').setAttribute('aria-pressed', 'true');
-                    byId('toggleRightPanelBtn').textContent = '⊖';
+                if (rightPanel && !rightPanel.classList.contains('expanded')) {
+                    rightPanel.classList.add('expanded');
+                    const toggle = byId('toggleRightPanelBtn');
+                    if (toggle) { toggle.setAttribute('aria-pressed', 'true'); toggle.textContent = '⊖'; }
                 }
-
-                setLabPanel(app.activeLabPanel);
+                setLabPanel('objectives');
             } else if (route.name === 'results') {
                 renderResults(app.lastResult);
             } else if (route.name === 'progress') {
@@ -1000,14 +1088,14 @@ function toggleSidebar() {
         });
     }
 
+    // ─── Store Bindings ────────────────────────────────────────────────────────
+
     function setupStoreBindings() {
         app.store.subscribe(({ state, reason }) => {
             updateStatsDisplay(state);
             updateSimulationButtons(state);
             updateQuickSteps(state);
-            if (!state.isSimulating) {
-                renderComponentLibrary();
-            }
+            if (!state.isSimulating) renderComponentLibrary();
             if (app.activeChallenge && !state.isSimulating && reason !== 'simulation_state_changed') {
                 applyPreviewObjectives();
             }
@@ -1018,69 +1106,44 @@ function toggleSidebar() {
         updateQuickSteps(app.store.getState());
     }
 
+    // ─── PWA Setup ─────────────────────────────────────────────────────────────
+
     function setupOfflineBanner() {
         const banner = byId('offlineBanner');
-        if (!banner) {
-            return;
-        }
-
-        function sync() {
-            banner.hidden = navigator.onLine;
-        }
-
-        window.addEventListener('online', () => {
-            sync();
-            addFeedback('Back online.', 'success');
-        });
-
-        window.addEventListener('offline', () => {
-            sync();
-            addFeedback('Offline mode enabled.', 'warning');
-        });
-
+        if (!banner) return;
+        function sync() { banner.hidden = navigator.onLine; }
+        window.addEventListener('online', () => { sync(); addFeedback('Back online.', 'success'); });
+        window.addEventListener('offline', () => { sync(); addFeedback('Offline mode enabled.', 'warning'); });
         sync();
     }
 
     function setupInstallPrompt() {
         const installBtn = byId('installBtn');
-        if (!installBtn) {
-            return;
-        }
-
+        if (!installBtn) return;
         window.addEventListener('beforeinstallprompt', (event) => {
             event.preventDefault();
             app.deferredInstallPrompt = event;
             installBtn.hidden = false;
         });
-
         installBtn.addEventListener('click', async () => {
-            if (!app.deferredInstallPrompt) {
-                return;
-            }
-
+            if (!app.deferredInstallPrompt) return;
             app.deferredInstallPrompt.prompt();
             await app.deferredInstallPrompt.userChoice;
             app.deferredInstallPrompt = null;
             installBtn.hidden = true;
         });
-
         window.addEventListener('appinstalled', () => {
             installBtn.hidden = true;
-            addFeedback('App installed successfully.', 'success');
+            addFeedback('App installed!', 'success');
         });
     }
 
     async function registerServiceWorker() {
-        if (!('serviceWorker' in navigator)) {
-            return;
-        }
-
-        try {
-            await navigator.serviceWorker.register('sw.js');
-        } catch (error) {
-            addFeedback('Service worker registration failed.', 'warning');
-        }
+        if (!('serviceWorker' in navigator)) return;
+        try { await navigator.serviceWorker.register('sw.js'); } catch { /* ignore */ }
     }
+
+    // ─── Initialize ────────────────────────────────────────────────────────────
 
     async function initialize() {
         app.bus = new EventBus();
@@ -1110,35 +1173,30 @@ function toggleSidebar() {
         setupOfflineBanner();
         setupInstallPrompt();
 
-        // Render component UI once here to populate the library
         renderComponentFilters();
         renderComponentLibrary();
         ensureAboutScreen();
         setLabPanel('objectives');
 
-        addFeedback('Welcome to Tech Builders.', 'success');
-        addFeedback('Complete experiments to unlock higher tiers.', 'info');
+        addFeedback('Welcome to Tech Builders!', 'success');
+        addFeedback('Select an experiment from the map to begin.', 'info');
 
         registerServiceWorker();
         app.router.replace('splash');
 
-        // expose onboarding controls globally for the small onboarding helper
-        window.nextOnboarding = nextOnboarding;
-        window.prevOnboarding = prevOnboarding;
-        window.hideOnboarding = hideOnboarding;
-        window.showOnboarding = showOnboarding;
-
-        // initialize onboarding wiring if available
+        // Wire up onboarding module
         if (window.Onboarding && typeof window.Onboarding.initOnboarding === 'function') {
             window.Onboarding.initOnboarding();
         }
 
-        // Auto-show onboarding once per user when entering lab for first time
-        const seen = localStorage.getItem('techBuildersSeenOnboarding');
+        // Show onboarding once on first lab visit
         app.router.onChange((route) => {
-            if (route.name === 'lab' && !seen) {
-                showOnboarding();
-                localStorage.setItem('techBuildersSeenOnboarding', '1');
+            if (route.name === 'lab') {
+                const seen = localStorage.getItem('techBuildersSeenOnboarding');
+                if (!seen) {
+                    showOnboarding();
+                    localStorage.setItem('techBuildersSeenOnboarding', '1');
+                }
             }
         });
     }
@@ -1146,6 +1204,7 @@ function toggleSidebar() {
     document.addEventListener('DOMContentLoaded', () => {
         initialize().catch((error) => {
             addFeedback(`Initialization failed: ${error.message}`, 'error');
+            console.error('Init error:', error);
         });
     });
 })();
