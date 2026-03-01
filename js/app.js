@@ -871,12 +871,12 @@
 
     function showWelcomePanel() {
         const overlay = byId('welcomeOverlay');
-        if (overlay) overlay.hidden = false;
+        if (overlay) overlay.removeAttribute('hidden');
     }
 
     function hideWelcomePanel() {
         const overlay = byId('welcomeOverlay');
-        if (overlay) overlay.hidden = true;
+        if (overlay) overlay.setAttribute('hidden', '');
 
         // Ensure we're on the lab screen and can build
         if (app.router.current.name !== 'lab' && app.activeChallengeDefinition) {
