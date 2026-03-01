@@ -1080,81 +1080,124 @@ a { color: var(--accent); }
 .btn-lg { padding: 14px 20px; font-size: 0.98rem; }
 
 /* ══════════════════════════════════════════════════════════
-   ONBOARDING OVERLAY
+   WELCOME PANEL
    ══════════════════════════════════════════════════════════ */
 
-.onboarding-overlay {
+/* Global Fix for Hidden Attribute */
+[hidden] {
+    display: none !important;
+}
+
+.welcome-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(2,6,12,0.72);
+    background: rgba(2,6,12,0.85);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 20000;
-    animation: fadeIn 0.2s ease;
-    pointer-events: all;
+    animation: fadeIn 0.3s ease;
+    pointer-events: auto;
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-.onboarding-card {
-    width: min(680px, 92vw);
-    padding: 24px;
-    border-radius: 18px;
-    animation: slideUp 0.3s cubic-bezier(0.4,0,0.2,1);
-    pointer-events: all;
+.welcome-card {
+    width: min(720px, 92vw);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    padding: 30px 40px;
+    border-radius: 20px;
+    animation: slideUp 0.4s cubic-bezier(0.4,0,0.2,1);
     position: relative;
-    z-index: 20001;
-}
-@keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to   { transform: translateY(0); opacity: 1; }
+    background: linear-gradient(145deg, rgba(16, 38, 64, 0.95), rgba(8, 20, 38, 0.98));
+    border: 1px solid rgba(89,231,255,0.3);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(89,231,255,0.05);
 }
 
-/* All buttons inside the onboarding card must always be clickable */
-.onboarding-card .btn,
-.onboarding-actions .btn {
-    pointer-events: all !important;
-    cursor: pointer !important;
-    position: relative;
+.welcome-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 5px;
     z-index: 20002;
 }
-
-.onboarding-counter {
-    font-size: 0.72rem;
-    color: var(--muted);
-    text-align: right;
-    margin-bottom: 6px;
+.welcome-close-btn:hover {
+    color: var(--danger);
 }
-.onboarding-title {
+
+.welcome-title {
     color: var(--accent);
-    font-size: 1.4rem;
-    margin-bottom: 12px;
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    margin-bottom: 20px;
+    text-align: left;
+    padding-right: 40px; /* Space for close button */
 }
-.onboarding-body {
-    color: var(--muted);
+
+.welcome-content {
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-bottom: 24px;
+}
+
+.welcome-message {
+    color: #e2f1ff;
     line-height: 1.6;
-    font-size: 0.95rem;
-    margin-bottom: 16px;
+    font-size: 1.05rem;
+    margin-bottom: 26px;
+    background: rgba(89,231,255,0.06);
+    padding: 22px;
+    border-radius: 12px;
+    border-left: 4px solid var(--accent);
+}
+.welcome-message strong {
+    color: var(--accent);
+}
+.welcome-message em {
+    color: var(--accent-2);
 }
 
-.onboarding-progress {
-    height: 4px;
-    background: rgba(255,255,255,0.12);
-    border-radius: 2px;
-    overflow: hidden;
-    margin-bottom: 16px;
-}
-.onboarding-progress-fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 2px;
-    transition: width 0.3s ease;
+.welcome-subtitle {
+    color: var(--accent-2);
+    font-size: 1.3rem;
+    margin-bottom: 14px;
 }
 
-.onboarding-actions {
+.welcome-instructions {
+    list-style: none;
     display: flex;
-    gap: 8px;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.welcome-instructions li {
+    color: #b9d9f1;
+    line-height: 1.5;
+    font-size: 0.95rem;
+    background: rgba(0,0,0,0.25);
+    padding: 14px 18px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.welcome-instructions strong {
+    color: var(--warning);
+}
+
+.welcome-actions {
+    display: flex;
+    gap: 12px;
     justify-content: flex-end;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
 }
 
 /* ══════════════════════════════════════════════════════════

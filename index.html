@@ -316,20 +316,33 @@
     </main>
 
     <!-- ═══════════════════════════════════════════
-         ONBOARDING OVERLAY
+         WELCOME OVERLAY
     ════════════════════════════════════════════ -->
-    <div id="onboardingOverlay" class="onboarding-overlay" hidden>
-        <div class="glass-card onboarding-card">
-            <div class="onboarding-counter">1 / 5</div>
-            <h2 class="onboarding-title">Welcome</h2>
-            <p class="onboarding-body">Short onboarding text.</p>
-            <div class="onboarding-progress">
-                <div class="onboarding-progress-fill"></div>
+    <div id="welcomeOverlay" class="welcome-overlay" hidden>
+        <div class="glass-card welcome-card">
+            <button id="welcomeCloseTopBtn" class="welcome-close-btn" type="button" aria-label="Close Welcome Panel">&times;</button>
+            <h2 class="welcome-title">Welcome to Tech Builders!</h2>
+            
+            <div class="welcome-content">
+                <p class="welcome-message">
+                    Hi there, Engineer!<br><br>
+                    We’re so excited to have you join us at <strong>Tech Builders</strong>. Our team at <strong>Cruze Tech</strong> has poured our hearts into creating this experience because we believe in the power of hands-on learning to solve real-world problems. Whether you're balancing energy grids or designing resilient water systems, your creativity is what will shape the future.<br><br>
+                    Enjoy the journey, learn from the challenges, and keep building!<br>
+                    <em>— With love, the Cruze Tech Team ♥</em>
+                </p>
+
+                <h3 class="welcome-subtitle">How It Works</h3>
+                <ul class="welcome-instructions">
+                    <li><strong>1. The Mission:</strong> You are an engineer solving problems across energy, water, health, transport, and resilience. Read each mission briefing carefully.</li>
+                    <li><strong>2. Build Your System:</strong> Pick components from the left panel and place them on the canvas. Balance your budget while adding generators (+W) and loads (−W).</li>
+                    <li><strong>3. Connect with Wires:</strong> Place a Wire Link to overlap components. Glowing green means it's powered! No wire = no power.</li>
+                    <li><strong>4. Objectives & Simulation:</strong> The right panel lists your goals. Hit <strong>Run Simulation</strong> to test your build against scenario conditions like weather and demand spikes.</li>
+                </ul>
             </div>
-            <div class="onboarding-actions">
-                <button id="onboardingPrev" class="btn btn-secondary">← Back</button>
-                <button id="onboardingSkip" class="btn btn-secondary">Skip</button>
-                <button id="onboardingNext" class="btn btn-primary">Next →</button>
+
+            <div class="welcome-actions">
+                <button id="welcomeSkipBtn" class="btn btn-secondary">Skip</button>
+                <button id="welcomeStartBtn" class="btn btn-primary">Start Building! →</button>
             </div>
         </div>
     </div>
@@ -347,7 +360,6 @@
     <script src="js/utils.js"></script>
     <script src="js/gameState.js"></script>
     <script src="js/canvasManager.js"></script>
-    <script src="js/onboarding.js"></script>
     <script src="js/challenge.js"></script>
     <script src="js/simulationEngine.js"></script>
     <script src="js/app.js"></script>

@@ -7,29 +7,6 @@
         telemetrySaveKey: 'techBuildersTelemetry'
     };
 
-    const ONBOARDING_STEPS = [
-        {
-            title: 'Welcome to Tech Builders!',
-            body: 'You are an engineer solving real-world problems across energy, water, health, transport and resilience. Each experiment has a mission — read it carefully before building.'
-        },
-        {
-            title: 'Building Your System',
-            body: 'Pick components from the left panel and place them on the canvas. Generators produce energy (+W), loads consume it (−W). Your budget is limited — spend wisely!'
-        },
-        {
-            title: 'Connecting with Wires',
-            body: 'Components only work when connected. Place a Wire Link so it overlaps both a generator and a load. When connected, components glow green. No wire = no power!'
-        },
-        {
-            title: 'Check Your Objectives',
-            body: 'The right panel shows exactly what you need to achieve. Each objective has a progress bar — watch them fill up as you build. Hit the pass score to unlock the next experiment.'
-        },
-        {
-            title: 'Run the Simulation',
-            body: 'When your design looks good, hit Run Simulation. The system tests your build against the scenario conditions (weather, demand spikes, outages). Good luck, Engineer!'
-        }
-    ];
-
     const COMPONENTS = {
         solarPanel: {
             name: 'Solar Panel',
@@ -281,10 +258,9 @@
     };
 
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { GAME_CONFIG, COMPONENTS, ONBOARDING_STEPS };
+        module.exports = { GAME_CONFIG, COMPONENTS };
     }
 
     root.GAME_CONFIG = GAME_CONFIG;
     root.COMPONENTS = COMPONENTS;
-    root.ONBOARDING_STEPS = ONBOARDING_STEPS;
 })(typeof window !== 'undefined' ? window : globalThis);

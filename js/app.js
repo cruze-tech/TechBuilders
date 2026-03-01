@@ -867,72 +867,22 @@
         addFeedback(`💡 Hint ${app.currentHintIndex}: ${hint}`, 'info');
     }
 
-    // ─── Onboarding ────────────────────────────────────────────────────────────
+    // ─── Welcome Panel ─────────────────────────────────────────────────────────
 
-    function renderOnboardingStep() {
-        const overlay = byId('onboardingOverlay');
-        const steps = window.ONBOARDING_STEPS || [];
-        if (!overlay || steps.length === 0) return;
-        const step = steps[app.onboardingIndex];
-        if (!step) return;
-        const titleEl = overlay.querySelector('.onboarding-title');
-        const bodyEl = overlay.querySelector('.onboarding-body');
-        const prevBtn = overlay.querySelector('#onboardingPrev');
-        const nextBtn = overlay.querySelector('#onboardingNext');
-        const counterEl = overlay.querySelector('.onboarding-counter');
-        if (titleEl) titleEl.textContent = step.title;
-        if (bodyEl) bodyEl.textContent = step.body;
-        if (prevBtn) prevBtn.disabled = app.onboardingIndex === 0;
-        // FIX: Show "Start Building!" on the final step (index 4 for 5 total steps)
-        if (nextBtn) nextBtn.textContent = app.onboardingIndex === steps.length - 1 ? 'Start Building!' : 'Next →';
-        if (counterEl) counterEl.textContent = `${app.onboardingIndex + 1} / ${steps.length}`;
+    function showWelcomePanel() {
+        const overlay = byId('welcomeOverlay');
+        if (overlay) overlay.hidden = false;
     }
 
-    function nextOnboarding() {
-        const steps = window.ONBOARDING_STEPS || [];
-        if (steps.length === 0) return;
-        
-        // FIX: On the LAST step (index === steps.length - 1), hide the overlay
-        if (app.onboardingIndex < steps.length - 1) {
-            app.onboardingIndex += 1;
-            renderOnboardingStep();
-        } else {
-            // We're on the final step — clicking "Start Building!" now closes it
-            hideOnboarding();
-        }
-    }
-
-    function prevOnboarding() {
-        if (app.onboardingIndex > 0) {
-            app.onboardingIndex -= 1;
-            renderOnboardingStep();
-        }
-    }
-
-    function showOnboarding() {
-        const overlay = byId('onboardingOverlay');
-        if (!overlay) return;
-        app.onboardingIndex = 0;
-        renderOnboardingStep();
-        overlay.hidden = false;
-    }
-
-    function hideOnboarding() {
-        const overlay = byId('onboardingOverlay');
+    function hideWelcomePanel() {
+        const overlay = byId('welcomeOverlay');
         if (overlay) overlay.hidden = true;
-        app.onboardingIndex = 0;
-        
+
         // Ensure we're on the lab screen and can build
         if (app.router.current.name !== 'lab' && app.activeChallengeDefinition) {
             app.router.navigate('lab', { challengeId: app.activeChallengeDefinition.id });
         }
     }
-
-    // Expose for onboarding.js
-    window.nextOnboarding = nextOnboarding;
-    window.prevOnboarding = prevOnboarding;
-    window.hideOnboarding = hideOnboarding;
-    window.showOnboarding = showOnboarding;
 
     // ─── Button Bindings ───────────────────────────────────────────────────────
 
@@ -1040,14 +990,22 @@
             renderProgress();
         });
 
-        // ── ONBOARDING BUTTONS ─────────────────────────────────────────────────
-        // These are wired once here so they always work regardless of overlay state
-        const onboardingNextBtn = byId('onboardingNext');
-        const onboardingPrevBtn = byId('onboardingPrev');
-        const onboardingSkipBtn = byId('onboardingSkip');
-        if (onboardingNextBtn) onboardingNextBtn.addEventListener('click', () => nextOnboarding());
-        if (onboardingPrevBtn) onboardingPrevBtn.addEventListener('click', () => prevOnboarding());
-        if (onboardingSkipBtn) onboardingSkipBtn.addEventListener('click', () => hideOnboarding());
+        // ── WELCOME PANEL BUTTONS ──────────────────────────────────────────────
+        const welcomeCloseTopBtn = byId('welcomeCloseTopBtn');
+        const welcomeSkipBtn = byId('welcomeSkipBtn');
+        const welcomeStartBtn = byId('welcomeStartBtn');
+        if (welcomeCloseTopBtn) welcomeCloseTopBtn.addEventListener('click', () => {
+            hideWelcomePanel();
+            try { localStorage.setItem('techBuildersSeenWelcome', 'true'); } catch (e) { }
+        });
+        if (welcomeSkipBtn) welcomeSkipBtn.addEventListener('click', () => {
+            hideWelcomePanel();
+            try { localStorage.setItem('techBuildersSeenWelcome', 'true'); } catch (e) { }
+        });
+        if (welcomeStartBtn) welcomeStartBtn.addEventListener('click', () => {
+            hideWelcomePanel();
+            try { localStorage.setItem('techBuildersSeenWelcome', 'true'); } catch (e) { }
+        });
 
         // ── Briefing start: bound once via delegation on the static button ────
         byId('briefStartBtn').addEventListener('click', () => {
@@ -1196,19 +1154,14 @@
         registerServiceWorker();
         app.router.replace('splash');
 
-        // Wire up onboarding module
-        if (window.Onboarding && typeof window.Onboarding.initOnboarding === 'function') {
-            window.Onboarding.initOnboarding();
-        }
-
-        // Show onboarding once on first lab visit (moved BEFORE router setup)
-        let hasSeenOnboardingThisSession = false;
+        // Show welcome panel once on first lab visit (moved BEFORE router setup)
+        let hasSeenWelcomeThisSession = false;
         app.router.onChange((route) => {
-            if (route.name === 'lab' && !hasSeenOnboardingThisSession) {
-                const seen = localStorage.getItem('techBuildersSeenOnboarding');
+            if (route.name === 'lab' && !hasSeenWelcomeThisSession) {
+                const seen = localStorage.getItem('techBuildersSeenWelcome');
                 if (!seen) {
-                    hasSeenOnboardingThisSession = true;
-                    showOnboarding();
+                    hasSeenWelcomeThisSession = true;
+                    showWelcomePanel();
                 }
             }
         });
