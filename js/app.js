@@ -877,11 +877,6 @@
     function hideWelcomePanel() {
         const overlay = byId('welcomeOverlay');
         if (overlay) overlay.setAttribute('hidden', '');
-
-        // Ensure we're on the lab screen and can build
-        if (app.router.current.name !== 'lab' && app.activeChallengeDefinition) {
-            app.router.navigate('lab', { challengeId: app.activeChallengeDefinition.id });
-        }
     }
 
     // ─── Button Bindings ───────────────────────────────────────────────────────
@@ -996,15 +991,15 @@
         const welcomeStartBtn = byId('welcomeStartBtn');
         if (welcomeCloseTopBtn) welcomeCloseTopBtn.addEventListener('click', () => {
             hideWelcomePanel();
-            try { localStorage.setItem('techBuildersSeenWelcome', 'true'); } catch (e) { }
+            app.router.replace('splash');
         });
         if (welcomeSkipBtn) welcomeSkipBtn.addEventListener('click', () => {
             hideWelcomePanel();
-            try { localStorage.setItem('techBuildersSeenWelcome', 'true'); } catch (e) { }
+            app.router.replace('splash');
         });
         if (welcomeStartBtn) welcomeStartBtn.addEventListener('click', () => {
             hideWelcomePanel();
-            try { localStorage.setItem('techBuildersSeenWelcome', 'true'); } catch (e) { }
+            app.router.replace('splash');
         });
 
         // ── Briefing start: bound once via delegation on the static button ────
@@ -1152,19 +1147,10 @@
         addFeedback('Select an experiment from the map to begin.', 'info');
 
         registerServiceWorker();
-        app.router.replace('splash');
 
-        // Show welcome panel once on first lab visit (moved BEFORE router setup)
-        let hasSeenWelcomeThisSession = false;
-        app.router.onChange((route) => {
-            if (route.name === 'lab' && !hasSeenWelcomeThisSession) {
-                const seen = localStorage.getItem('techBuildersSeenWelcome');
-                if (!seen) {
-                    hasSeenWelcomeThisSession = true;
-                    showWelcomePanel();
-                }
-            }
-        });
+        // Always show welcome panel for all users (both new and returning)
+        // They can skip it if they want
+        showWelcomePanel();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
