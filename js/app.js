@@ -909,6 +909,25 @@
         }
     }
 
+    function showOnboarding() {
+        const overlay = byId('onboardingOverlay');
+        if (!overlay) return;
+        app.onboardingIndex = 0;
+        renderOnboardingStep();
+        overlay.hidden = false;
+    }
+
+    function hideOnboarding() {
+        const overlay = byId('onboardingOverlay');
+        if (overlay) overlay.hidden = true;
+        app.onboardingIndex = 0;
+        
+        // Ensure we're on the lab screen and can build
+        if (app.router.current.name !== 'lab' && app.activeChallengeDefinition) {
+            app.router.navigate('lab', { challengeId: app.activeChallengeDefinition.id });
+        }
+    }
+
     // Expose for onboarding.js
     window.nextOnboarding = nextOnboarding;
     window.prevOnboarding = prevOnboarding;
