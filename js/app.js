@@ -883,32 +883,21 @@
         if (titleEl) titleEl.textContent = step.title;
         if (bodyEl) bodyEl.textContent = step.body;
         if (prevBtn) prevBtn.disabled = app.onboardingIndex === 0;
+        // FIX: Show "Start Building!" on the final step (index 4 for 5 total steps)
         if (nextBtn) nextBtn.textContent = app.onboardingIndex === steps.length - 1 ? 'Start Building!' : 'Next →';
         if (counterEl) counterEl.textContent = `${app.onboardingIndex + 1} / ${steps.length}`;
-    }
-
-    function showOnboarding() {
-        const overlay = byId('onboardingOverlay');
-        if (!overlay) return;
-        app.onboardingIndex = 0;
-        renderOnboardingStep();
-        overlay.hidden = false;
-    }
-
-    function hideOnboarding() {
-        const overlay = byId('onboardingOverlay');
-        if (overlay) overlay.hidden = true;
     }
 
     function nextOnboarding() {
         const steps = window.ONBOARDING_STEPS || [];
         if (steps.length === 0) return;
+        
+        // FIX: On the LAST step (index === steps.length - 1), hide the overlay
         if (app.onboardingIndex < steps.length - 1) {
             app.onboardingIndex += 1;
             renderOnboardingStep();
         } else {
-            // Mark as seen and hide
-            try { localStorage.setItem('techBuildersSeenOnboarding', '1'); } catch { /* ignore */ }
+            // We're on the final step — clicking "Start Building!" now closes it
             hideOnboarding();
         }
     }
@@ -1032,7 +1021,7 @@
             renderProgress();
         });
 
-        // ── Onboarding buttons ─────────────────────────────────────────────────
+        // ── ONBOARDING BUTTONS ─────────────────────────────────────────────────
         // These are wired once here so they always work regardless of overlay state
         const onboardingNextBtn = byId('onboardingNext');
         const onboardingPrevBtn = byId('onboardingPrev');
@@ -1193,13 +1182,14 @@
             window.Onboarding.initOnboarding();
         }
 
-        // Show onboarding once on first lab visit
+        // Show onboarding once on first lab visit (moved BEFORE router setup)
+        let hasSeenOnboardingThisSession = false;
         app.router.onChange((route) => {
-            if (route.name === 'lab') {
+            if (route.name === 'lab' && !hasSeenOnboardingThisSession) {
                 const seen = localStorage.getItem('techBuildersSeenOnboarding');
                 if (!seen) {
+                    hasSeenOnboardingThisSession = true;
                     showOnboarding();
-                    localStorage.setItem('techBuildersSeenOnboarding', '1');
                 }
             }
         });
