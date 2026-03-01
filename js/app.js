@@ -871,8 +871,9 @@
 
     function renderOnboardingStep() {
         const overlay = byId('onboardingOverlay');
-        if (!overlay || !ONBOARDING_STEPS || ONBOARDING_STEPS.length === 0) return;
-        const step = ONBOARDING_STEPS[app.onboardingIndex];
+        const steps = window.ONBOARDING_STEPS || [];
+        if (!overlay || steps.length === 0) return;
+        const step = steps[app.onboardingIndex];
         if (!step) return;
         const titleEl = overlay.querySelector('.onboarding-title');
         const bodyEl = overlay.querySelector('.onboarding-body');
@@ -882,8 +883,8 @@
         if (titleEl) titleEl.textContent = step.title;
         if (bodyEl) bodyEl.textContent = step.body;
         if (prevBtn) prevBtn.disabled = app.onboardingIndex === 0;
-        if (nextBtn) nextBtn.textContent = app.onboardingIndex === ONBOARDING_STEPS.length - 1 ? 'Start Building!' : 'Next →';
-        if (counterEl) counterEl.textContent = `${app.onboardingIndex + 1} / ${ONBOARDING_STEPS.length}`;
+        if (nextBtn) nextBtn.textContent = app.onboardingIndex === steps.length - 1 ? 'Start Building!' : 'Next →';
+        if (counterEl) counterEl.textContent = `${app.onboardingIndex + 1} / ${steps.length}`;
     }
 
     function showOnboarding() {
@@ -900,11 +901,14 @@
     }
 
     function nextOnboarding() {
-        if (!ONBOARDING_STEPS) return;
-        if (app.onboardingIndex < ONBOARDING_STEPS.length - 1) {
+        const steps = window.ONBOARDING_STEPS || [];
+        if (steps.length === 0) return;
+        if (app.onboardingIndex < steps.length - 1) {
             app.onboardingIndex += 1;
             renderOnboardingStep();
         } else {
+            // Mark as seen and hide
+            try { localStorage.setItem('techBuildersSeenOnboarding', '1'); } catch { /* ignore */ }
             hideOnboarding();
         }
     }
