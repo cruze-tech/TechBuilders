@@ -318,26 +318,60 @@
         const campaign = state.campaign;
         const tiers = app.progression.getChallengesByTier();
 
+        updateMapProgressBar();
+
         mapContainer.innerHTML = '';
         [1, 2, 3].forEach((tierNumber) => {
+            const tierChallenges = tiers[tierNumber] || [];
+            const completeCount = tierChallenges.filter((c) => campaign.completedExperiments[c.id]?.passed).length;
+            const hasActive = tierChallenges.some((c) => campaign.currentExperimentId === c.id);
+            const isComplete = completeCount === tierChallenges.length && tierChallenges.length > 0;
+
             const row = document.createElement('section');
-            row.className = 'tier-row';
+            row.className = ['tier-row', hasActive ? 'tier-has-active' : ''].filter(Boolean).join(' ');
 
             const heading = document.createElement('div');
             heading.className = 'tier-heading';
-            const title = document.createElement('h3');
+            heading.setAttribute('role', 'button');
+            heading.setAttribute('aria-expanded', 'true');
+            heading.setAttribute('tabindex', '0');
 
+            const headingLeft = document.createElement('div');
+            headingLeft.className = 'tier-heading-left';
+            const title = document.createElement('h3');
             const tierLabels = { 1: 'Tier 1 — Foundations', 2: 'Tier 2 — Intermediate', 3: 'Tier 3 — Advanced' };
             title.textContent = tierLabels[tierNumber] || `Tier ${tierNumber}`;
+            headingLeft.appendChild(title);
+
+            const headingRight = document.createElement('div');
+            headingRight.className = 'tier-heading-right';
 
             const summary = document.createElement('span');
-            const tierChallenges = tiers[tierNumber] || [];
-            const completeCount = tierChallenges.filter((c) => campaign.completedExperiments[c.id]?.passed).length;
-            summary.textContent = `${completeCount}/${tierChallenges.length} complete`;
-            summary.className = completeCount === tierChallenges.length && tierChallenges.length > 0 ? 'tier-badge tier-complete' : 'tier-badge';
+            summary.textContent = `${completeCount}/${tierChallenges.length}`;
+            summary.className = isComplete ? 'tier-badge tier-complete' : 'tier-badge';
+            headingRight.appendChild(summary);
 
-            heading.appendChild(title);
-            heading.appendChild(summary);
+            const chevron = document.createElement('span');
+            chevron.className = 'tier-chevron';
+            chevron.textContent = '▼';
+            chevron.setAttribute('aria-hidden', 'true');
+            headingRight.appendChild(chevron);
+
+            heading.appendChild(headingLeft);
+            heading.appendChild(headingRight);
+
+            const nodesWrap = document.createElement('div');
+            nodesWrap.className = 'tier-nodes-wrap';
+
+            const toggleCollapse = () => {
+                const collapsed = row.classList.toggle('collapsed');
+                heading.setAttribute('aria-expanded', String(!collapsed));
+            };
+            heading.addEventListener('click', toggleCollapse);
+            heading.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCollapse(); }
+            });
+
             row.appendChild(heading);
 
             const nodes = document.createElement('div');
@@ -383,7 +417,8 @@
                 nodes.appendChild(node);
             });
 
-            row.appendChild(nodes);
+            nodesWrap.appendChild(nodes);
+            row.appendChild(nodesWrap);
             mapContainer.appendChild(row);
         });
     }
@@ -867,6 +902,61 @@
         addFeedback(`💡 Hint ${app.currentHintIndex}: ${hint}`, 'info');
     }
 
+    // ─── Onboarding ────────────────────────────────────────────────────────────
+
+    function renderOnboardingStep() {
+        const overlay = byId('onboardingOverlay');
+        if (!overlay || !ONBOARDING_STEPS || ONBOARDING_STEPS.length === 0) return;
+        const step = ONBOARDING_STEPS[app.onboardingIndex];
+        if (!step) return;
+        const titleEl = overlay.querySelector('.onboarding-title');
+        const bodyEl = overlay.querySelector('.onboarding-body');
+        const prevBtn = overlay.querySelector('#onboardingPrev');
+        const nextBtn = overlay.querySelector('#onboardingNext');
+        const counterEl = overlay.querySelector('.onboarding-counter');
+        if (titleEl) titleEl.textContent = step.title;
+        if (bodyEl) bodyEl.textContent = step.body;
+        if (prevBtn) prevBtn.disabled = app.onboardingIndex === 0;
+        if (nextBtn) nextBtn.textContent = app.onboardingIndex === ONBOARDING_STEPS.length - 1 ? 'Start Building!' : 'Next →';
+        if (counterEl) counterEl.textContent = `${app.onboardingIndex + 1} / ${ONBOARDING_STEPS.length}`;
+    }
+
+    function showOnboarding() {
+        const overlay = byId('onboardingOverlay');
+        if (!overlay) return;
+        app.onboardingIndex = 0;
+        renderOnboardingStep();
+        overlay.hidden = false;
+    }
+
+    function hideOnboarding() {
+        const overlay = byId('onboardingOverlay');
+        if (overlay) overlay.hidden = true;
+    }
+
+    function nextOnboarding() {
+        if (!ONBOARDING_STEPS) return;
+        if (app.onboardingIndex < ONBOARDING_STEPS.length - 1) {
+            app.onboardingIndex += 1;
+            renderOnboardingStep();
+        } else {
+            hideOnboarding();
+        }
+    }
+
+    function prevOnboarding() {
+        if (app.onboardingIndex > 0) {
+            app.onboardingIndex -= 1;
+            renderOnboardingStep();
+        }
+    }
+
+    // Expose for onboarding.js
+    window.nextOnboarding = nextOnboarding;
+    window.prevOnboarding = prevOnboarding;
+    window.hideOnboarding = hideOnboarding;
+    window.showOnboarding = showOnboarding;
+
     // ─── Welcome Panel ─────────────────────────────────────────────────────────
 
     function showWelcomePanel() {
@@ -877,6 +967,53 @@
     function hideWelcomePanel() {
         const overlay = byId('welcomeOverlay');
         if (overlay) overlay.setAttribute('hidden', '');
+    }
+
+    function hasSeenWelcome() {
+        try { return localStorage.getItem('techBuildersSeenWelcome') === '1'; } catch { return false; }
+    }
+
+    function markWelcomeSeen() {
+        try { localStorage.setItem('techBuildersSeenWelcome', '1'); } catch { /* ignore */ }
+    }
+
+    // ─── Dropdown Nav ──────────────────────────────────────────────────────────
+
+    function openDropdown(btnId, dropdownId) {
+        const btn = byId(btnId); const dd = byId(dropdownId);
+        if (!btn || !dd) return;
+        dd.hidden = false; btn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeDropdown(btnId, dropdownId) {
+        const btn = byId(btnId); const dd = byId(dropdownId);
+        if (!btn || !dd) return;
+        dd.hidden = true; btn.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleDropdown(btnId, dropdownId) {
+        const dd = byId(dropdownId);
+        if (!dd) return;
+        if (dd.hidden) openDropdown(btnId, dropdownId);
+        else closeDropdown(btnId, dropdownId);
+    }
+
+    function closeAllDropdowns() {
+        closeDropdown('mapMenuBtn', 'mapMenuDropdown');
+        closeDropdown('labMenuBtn', 'labMenuDropdown');
+    }
+
+    // ─── Map Progress Bar ──────────────────────────────────────────────────────
+
+    function updateMapProgressBar() {
+        const state = app.store.getState();
+        const campaign = state.campaign;
+        const summary = app.progression.getCampaignSummary(campaign);
+        const fill = byId('mapProgressFill');
+        const label = byId('mapProgressLabel');
+        const pct = summary.totalExperiments === 0 ? 0 : Math.round((summary.completedExperiments / summary.totalExperiments) * 100);
+        if (fill) fill.style.width = `${pct}%`;
+        if (label) label.textContent = `${summary.completedExperiments} / ${summary.totalExperiments} complete`;
     }
 
     // ─── Button Bindings ───────────────────────────────────────────────────────
@@ -909,13 +1046,26 @@
         byId('howToPlayBtn').addEventListener('click', () => app.router.navigate('help'));
         byId('aboutBtn').addEventListener('click', () => app.router.navigate('about'));
         byId('helpBackBtn').addEventListener('click', () => app.router.back('mode'));
-        byId('mapToModeBtn').addEventListener('click', () => app.router.navigate('mode'));
-        byId('mapToProgressBtn').addEventListener('click', () => app.router.navigate('progress'));
-        byId('mapToAboutBtn').addEventListener('click', () => app.router.navigate('about'));
+        // Map dropdown
+        byId('mapMenuBtn').addEventListener('click', (e) => { e.stopPropagation(); toggleDropdown('mapMenuBtn', 'mapMenuDropdown'); });
+        byId('mapToModeBtn').addEventListener('click', () => { closeAllDropdowns(); app.router.navigate('mode'); });
+        byId('mapToProgressBtn').addEventListener('click', () => { closeAllDropdowns(); app.router.navigate('progress'); });
+        byId('mapToAboutBtn').addEventListener('click', () => { closeAllDropdowns(); app.router.navigate('about'); });
         byId('briefBackBtn').addEventListener('click', () => app.router.navigate('map'));
-        byId('labToMapBtn').addEventListener('click', () => app.router.navigate('map'));
-        byId('labToProgressBtn').addEventListener('click', () => app.router.navigate('progress'));
-        byId('labToAboutBtn').addEventListener('click', () => app.router.navigate('about'));
+
+        // Lab dropdown
+        byId('labMenuBtn').addEventListener('click', (e) => { e.stopPropagation(); toggleDropdown('labMenuBtn', 'labMenuDropdown'); });
+        byId('labToMapBtn').addEventListener('click', () => { closeAllDropdowns(); app.router.navigate('map'); });
+        byId('labToProgressBtn').addEventListener('click', () => { closeAllDropdowns(); app.router.navigate('progress'); });
+        byId('labToAboutBtn').addEventListener('click', () => { closeAllDropdowns(); app.router.navigate('about'); });
+
+        // Close dropdowns on outside click
+        document.addEventListener('click', () => closeAllDropdowns());
+
+        // Welcome panel buttons
+        byId('welcomeCloseTopBtn').addEventListener('click', () => { hideWelcomePanel(); markWelcomeSeen(); });
+        byId('welcomeSkipBtn').addEventListener('click', () => { hideWelcomePanel(); markWelcomeSeen(); });
+        byId('welcomeStartBtn').addEventListener('click', () => { hideWelcomePanel(); markWelcomeSeen(); app.router.navigate('map'); });
 
         const focusBtn = byId('focusToggleBtn');
         if (focusBtn) focusBtn.addEventListener('click', () => setFocusMode(!document.body.classList.contains('focus-mode')));
@@ -985,22 +1135,14 @@
             renderProgress();
         });
 
-        // ── WELCOME PANEL BUTTONS ──────────────────────────────────────────────
-        const welcomeCloseTopBtn = byId('welcomeCloseTopBtn');
-        const welcomeSkipBtn = byId('welcomeSkipBtn');
-        const welcomeStartBtn = byId('welcomeStartBtn');
-        if (welcomeCloseTopBtn) welcomeCloseTopBtn.addEventListener('click', () => {
-            hideWelcomePanel();
-            app.router.replace('splash');
-        });
-        if (welcomeSkipBtn) welcomeSkipBtn.addEventListener('click', () => {
-            hideWelcomePanel();
-            app.router.replace('splash');
-        });
-        if (welcomeStartBtn) welcomeStartBtn.addEventListener('click', () => {
-            hideWelcomePanel();
-            app.router.replace('splash');
-        });
+        // ── Onboarding buttons ─────────────────────────────────────────────────
+        // These are wired once here so they always work regardless of overlay state
+        const onboardingNextBtn = byId('onboardingNext');
+        const onboardingPrevBtn = byId('onboardingPrev');
+        const onboardingSkipBtn = byId('onboardingSkip');
+        if (onboardingNextBtn) onboardingNextBtn.addEventListener('click', () => nextOnboarding());
+        if (onboardingPrevBtn) onboardingPrevBtn.addEventListener('click', () => prevOnboarding());
+        if (onboardingSkipBtn) onboardingSkipBtn.addEventListener('click', () => hideOnboarding());
 
         // ── Briefing start: bound once via delegation on the static button ────
         byId('briefStartBtn').addEventListener('click', () => {
@@ -1147,10 +1289,12 @@
         addFeedback('Select an experiment from the map to begin.', 'info');
 
         registerServiceWorker();
+        app.router.replace('splash');
 
-        // Always show welcome panel for all users (both new and returning)
-        // They can skip it if they want
-        showWelcomePanel();
+        // Show welcome panel only to first-time users
+        if (!hasSeenWelcome()) {
+            showWelcomePanel();
+        }
     }
 
     document.addEventListener('DOMContentLoaded', () => {

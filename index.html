@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#132f53">
     <title>Tech Builders: Innovation Sprint</title>
-    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-PJN01Q8FMN"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -24,9 +23,7 @@
 
     <main class="app-shell" aria-live="polite">
 
-        <!-- ═══════════════════════════════════════════
-             SPLASH SCREEN
-        ════════════════════════════════════════════ -->
+        <!-- SPLASH -->
         <section id="splashScreen" class="screen" aria-labelledby="splashTitle">
             <div class="hero-orb hero-orb-a"></div>
             <div class="hero-orb hero-orb-b"></div>
@@ -38,9 +35,7 @@
             </div>
         </section>
 
-        <!-- ═══════════════════════════════════════════
-             MODE SCREEN
-        ════════════════════════════════════════════ -->
+        <!-- MODE -->
         <section id="modeScreen" class="screen" aria-labelledby="modeTitle">
             <div class="glass-card mode-card">
                 <h2 id="modeTitle">Choose Your Path</h2>
@@ -55,9 +50,7 @@
             </div>
         </section>
 
-        <!-- ═══════════════════════════════════════════
-             HELP SCREEN
-        ════════════════════════════════════════════ -->
+        <!-- HELP -->
         <section id="helpScreen" class="screen" aria-labelledby="helpTitle">
             <div class="glass-card modal-card">
                 <h2 id="helpTitle">How To Play</h2>
@@ -76,24 +69,41 @@
             </div>
         </section>
 
-        <!-- ═══════════════════════════════════════════
-             MAP SCREEN
-        ════════════════════════════════════════════ -->
+        <!-- MAP SCREEN — redesigned header with dropdown nav -->
         <section id="mapScreen" class="screen" aria-labelledby="mapTitle">
-            <header class="screen-header">
-                <h2 id="mapTitle">Experiment Map</h2>
-                <div class="header-actions">
-                    <button id="mapToModeBtn" class="btn btn-secondary" type="button">Menu</button>
-                    <button id="mapToProgressBtn" class="btn btn-secondary" type="button">Progress</button>
-                    <button id="mapToAboutBtn" class="btn btn-secondary" type="button">About</button>
+
+            <header class="map-header">
+                <div class="map-header-left">
+                    <h2 id="mapTitle">Experiment Map</h2>
+                    <div id="mapCampaignProgress" class="map-campaign-meta"></div>
+                </div>
+
+                <!-- Campaign progress bar in header -->
+                <div class="map-progress-wrap">
+                    <div class="map-progress-track">
+                        <div id="mapProgressFill" class="map-progress-fill"></div>
+                    </div>
+                    <span id="mapProgressLabel" class="map-progress-label">0 / 10 complete</span>
+                </div>
+
+                <!-- Single nav dropdown — replaces 3 separate buttons -->
+                <div class="nav-menu-wrap" id="mapNavWrap">
+                    <button id="mapMenuBtn" class="btn btn-secondary nav-menu-btn" type="button"
+                            aria-label="Navigation menu" aria-expanded="false" aria-haspopup="true">
+                        ≡ Menu
+                    </button>
+                    <div id="mapMenuDropdown" class="nav-dropdown" hidden role="menu" aria-labelledby="mapMenuBtn">
+                        <button id="mapToModeBtn" class="nav-dropdown-item" type="button" role="menuitem">🏠 Home</button>
+                        <button id="mapToProgressBtn" class="nav-dropdown-item" type="button" role="menuitem">📊 Progress</button>
+                        <button id="mapToAboutBtn" class="nav-dropdown-item" type="button" role="menuitem">ℹ️ About</button>
+                    </div>
                 </div>
             </header>
+
             <div class="tier-map" id="tierMap" aria-label="Tiered experiment map"></div>
         </section>
 
-        <!-- ═══════════════════════════════════════════
-             BRIEFING SCREEN
-        ════════════════════════════════════════════ -->
+        <!-- BRIEFING -->
         <section id="briefingScreen" class="screen" aria-labelledby="briefTitle">
             <div class="glass-card briefing-card">
                 <h2 id="briefTitle"></h2>
@@ -128,15 +138,17 @@
             </div>
         </section>
 
-        <!-- ═══════════════════════════════════════════
-             LAB SCREEN
-        ════════════════════════════════════════════ -->
+        <!-- LAB SCREEN — redesigned top bar -->
         <section id="labScreen" class="screen" aria-labelledby="labTitle">
+
             <header class="top-bar">
+                <!-- Left: experiment title + subtitle -->
                 <div class="top-bar-left">
                     <h2 id="labTitle" class="game-title">Build Lab</h2>
                     <p id="labSubtitle" class="lab-subtitle">Configure your system and pass all objectives.</p>
                 </div>
+
+                <!-- Centre: stats -->
                 <div class="stats-display" aria-label="Game stats">
                     <div class="stat-item" id="statBudget">
                         <span>Credits</span>
@@ -151,17 +163,28 @@
                         <strong id="pointsDisplay">0</strong>/100
                     </div>
                 </div>
-                <div class="header-actions compact-actions">
-                    <button id="labToMapBtn" class="btn btn-secondary" type="button">Map</button>
-                    <button id="focusToggleBtn" class="btn btn-secondary" type="button" aria-pressed="false">Focus</button>
-                    <button id="labToProgressBtn" class="btn btn-secondary" type="button">Progress</button>
-                    <button id="labToAboutBtn" class="btn btn-secondary" type="button">About</button>
+
+                <!-- Right: focus toggle + single nav dropdown -->
+                <div class="lab-nav-group">
+                    <button id="focusToggleBtn" class="btn btn-secondary focus-btn" type="button"
+                            aria-pressed="false" title="Toggle focus mode">⊡ Focus</button>
+                    <div class="nav-menu-wrap" id="labNavWrap">
+                        <button id="labMenuBtn" class="btn btn-secondary nav-menu-btn" type="button"
+                                aria-label="Navigation menu" aria-expanded="false" aria-haspopup="true">
+                            ≡ Menu
+                        </button>
+                        <div id="labMenuDropdown" class="nav-dropdown nav-dropdown-right" hidden role="menu" aria-labelledby="labMenuBtn">
+                            <button id="labToMapBtn" class="nav-dropdown-item" type="button" role="menuitem">🗺️ Experiment Map</button>
+                            <button id="labToProgressBtn" class="nav-dropdown-item" type="button" role="menuitem">📊 Progress</button>
+                            <button id="labToAboutBtn" class="nav-dropdown-item" type="button" role="menuitem">ℹ️ About</button>
+                        </div>
+                    </div>
                 </div>
             </header>
 
             <div class="game-container">
 
-                <!-- LEFT SIDEBAR: Component Library -->
+                <!-- LEFT SIDEBAR -->
                 <aside class="sidebar expanded" aria-label="Component Library">
                     <button id="toggleSidebarBtn" class="btn btn-secondary sidebar-toggle" type="button" aria-pressed="true" title="Toggle component library">◀</button>
                     <h3 class="section-title">Components</h3>
@@ -169,16 +192,15 @@
                     <div class="component-grid" id="componentLibrary"></div>
                 </aside>
 
-                <!-- CANVAS: Design Workspace -->
+                <!-- CANVAS -->
                 <section class="canvas-area" aria-label="Design workspace">
                     <svg id="buildCanvas" viewBox="0 0 1200 760" role="img" aria-label="Canvas for placing engineering components"></svg>
                 </section>
 
-                <!-- RIGHT PANEL: Objectives & Controls -->
+                <!-- RIGHT PANEL -->
                 <aside class="right-panel expanded" aria-label="Challenge objectives and controls">
                     <button id="toggleRightPanelBtn" class="btn btn-secondary" type="button" aria-pressed="true" title="Toggle objectives panel">⊖</button>
 
-                    <!-- Quick Steps -->
                     <div class="lab-flow-card">
                         <h3 class="section-title">Quick Steps</h3>
                         <ol class="quick-steps" aria-label="Gameplay flow">
@@ -188,18 +210,18 @@
                         </ol>
                     </div>
 
-                    <!-- Controls -->
+                    <!-- Run always on top -->
                     <div class="controls">
                         <button id="runSimBtn" class="btn btn-primary run-btn" type="button">▶ Run Simulation</button>
                         <button id="stopSimBtn" class="btn btn-secondary" type="button" disabled>⏹ Stop</button>
                     </div>
+
+                    <!-- Secondary controls — icon buttons to save space, hint gets label -->
                     <div class="controls controls-secondary">
-                        <button id="saveBtn" class="btn btn-secondary" type="button">💾 Save</button>
-                        <button id="loadBtn" class="btn btn-secondary" type="button">📂 Load</button>
-                        <button id="clearBtn" class="btn btn-danger" type="button">🗑 Clear</button>
-                    </div>
-                    <div class="controls controls-secondary">
-                        <button id="hintBtn" class="btn btn-secondary" type="button">💡 Hint</button>
+                        <button id="saveBtn" class="btn btn-secondary ctrl-icon-btn" type="button" title="Save campaign">💾 Save</button>
+                        <button id="loadBtn" class="btn btn-secondary ctrl-icon-btn" type="button" title="Load save">📂 Load</button>
+                        <button id="hintBtn" class="btn btn-secondary ctrl-icon-btn" type="button" title="Show a hint">💡 Hint</button>
+                        <button id="clearBtn" class="btn btn-danger ctrl-icon-btn" type="button" title="Clear canvas">🗑 Clear</button>
                     </div>
 
                     <!-- Panel Tabs -->
@@ -214,14 +236,11 @@
                         <div class="challenge-box">
                             <h3 class="challenge-title" id="challengeTitle"></h3>
                             <p class="challenge-desc" id="challengeDesc"></p>
-
-                            <!-- Live score tally -->
                             <div class="live-score-row">
                                 <span class="live-score-label">Live Score:</span>
                                 <span id="liveScoreTally" class="live-score-tally tally-failing">0/100</span>
                                 <span id="passThresholdLabel" class="pass-threshold-label">Pass threshold pending</span>
                             </div>
-
                             <h4 class="section-title">Objectives</h4>
                             <ul class="objectives-list" id="objectivesList"></ul>
                         </div>
@@ -243,30 +262,16 @@
             </div>
         </section>
 
-        <!-- ═══════════════════════════════════════════
-             RESULTS SCREEN
-        ════════════════════════════════════════════ -->
+        <!-- RESULTS -->
         <section id="resultsScreen" class="screen" aria-labelledby="resultsTitle">
             <div class="glass-card result-card">
                 <h2 id="resultsTitle">Simulation Results</h2>
                 <p id="resultExperimentTitle" class="result-experiment"></p>
-
-                <!-- Pass/Fail Banner -->
                 <div id="resultBanner" class="result-banner banner-fail">✗ Not quite — keep building!</div>
-
-                <!-- Score -->
                 <div id="resultScore" class="result-score">0/100</div>
-
-                <!-- Stars -->
                 <div id="resultStars" class="result-stars" aria-label="Star rating"></div>
-
-                <!-- Narrative -->
                 <p id="resultNarrative" class="result-narrative"></p>
-
-                <!-- Objective Breakdown -->
                 <div id="resultFeedback" class="result-feedback"></div>
-
-                <!-- Actions -->
                 <div class="modal-actions result-actions">
                     <button id="resultRetryBtn" class="btn btn-secondary" type="button">🔁 Retry</button>
                     <button id="resultNextBtn" class="btn btn-primary" type="button">Next Experiment →</button>
@@ -275,9 +280,7 @@
             </div>
         </section>
 
-        <!-- ═══════════════════════════════════════════
-             PROGRESS SCREEN
-        ════════════════════════════════════════════ -->
+        <!-- PROGRESS -->
         <section id="progressScreen" class="screen" aria-labelledby="progressTitle">
             <div class="glass-card progress-card">
                 <h2 id="progressTitle">Progress Summary</h2>
@@ -301,9 +304,7 @@
             </div>
         </section>
 
-        <!-- ═══════════════════════════════════════════
-             ABOUT SCREEN
-        ════════════════════════════════════════════ -->
+        <!-- ABOUT -->
         <section id="aboutScreen" class="screen" aria-labelledby="aboutTitle">
             <div class="glass-card about-wrapper">
                 <div id="aboutContent"></div>
@@ -315,34 +316,29 @@
 
     </main>
 
-    <!-- ═══════════════════════════════════════════
-         WELCOME OVERLAY
-    ════════════════════════════════════════════ -->
+    <!-- WELCOME OVERLAY — shown only to first-time users -->
     <div id="welcomeOverlay" class="welcome-overlay" hidden>
         <div class="glass-card welcome-card">
             <button id="welcomeCloseTopBtn" class="welcome-close-btn" type="button" aria-label="Close Welcome Panel">&times;</button>
             <h2 class="welcome-title">Welcome to Tech Builders!</h2>
-            
             <div class="welcome-content">
                 <p class="welcome-message">
                     Hi there, Engineer!<br><br>
-                    We’re so excited to have you join us at <strong>Tech Builders</strong>. Our team at <strong>Cruze Tech</strong> has poured our hearts into creating this experience because we believe in the power of hands-on learning to solve real-world problems. Whether you're balancing energy grids or designing resilient water systems, your creativity is what will shape the future.<br><br>
+                    We're so excited to have you join us at <strong>Tech Builders</strong>. Our team at <strong>Cruze Tech</strong> has poured our hearts into creating this experience because we believe in the power of hands-on learning to solve real-world problems.<br><br>
                     Enjoy the journey, learn from the challenges, and keep building!<br>
                     <em>— With love, the Cruze Tech Team ♥</em>
                 </p>
-
                 <h3 class="welcome-subtitle">How It Works</h3>
                 <ul class="welcome-instructions">
-                    <li><strong>1. The Mission:</strong> You are an engineer solving problems across energy, water, health, transport, and resilience. Read each mission briefing carefully.</li>
-                    <li><strong>2. Build Your System:</strong> Pick components from the left panel and place them on the canvas. Balance your budget while adding generators (+W) and loads (−W).</li>
-                    <li><strong>3. Connect with Wires:</strong> Place a Wire Link to overlap components. Glowing green means it's powered! No wire = no power.</li>
-                    <li><strong>4. Objectives & Simulation:</strong> The right panel lists your goals. Hit <strong>Run Simulation</strong> to test your build against scenario conditions like weather and demand spikes.</li>
+                    <li><strong>1. The Mission:</strong> You are an engineer solving real-world problems. Read each mission briefing carefully.</li>
+                    <li><strong>2. Build Your System:</strong> Pick components from the left panel and place them on the canvas. Watch your budget!</li>
+                    <li><strong>3. Connect with Wires:</strong> Place a Wire Link to overlap components. Glowing green means powered!</li>
+                    <li><strong>4. Run &amp; Score:</strong> Hit <strong>Run Simulation</strong> to test your build against real scenario conditions.</li>
                 </ul>
             </div>
-
             <div class="welcome-actions">
-                <button id="welcomeSkipBtn" class="btn btn-secondary">Skip</button>
-                <button id="welcomeStartBtn" class="btn btn-primary">Start Building! →</button>
+                <button id="welcomeSkipBtn" class="btn btn-secondary" type="button">Skip for now</button>
+                <button id="welcomeStartBtn" class="btn btn-primary" type="button">Let's Go! →</button>
             </div>
         </div>
     </div>
