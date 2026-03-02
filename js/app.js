@@ -1047,20 +1047,25 @@
         byId('aboutBtn').addEventListener('click', () => app.router.navigate('about'));
         byId('helpBackBtn').addEventListener('click', () => app.router.back('mode'));
         // Map dropdown
-        byId('mapMenuBtn').addEventListener('click', (e) => { e.stopPropagation(); toggleDropdown('mapMenuBtn', 'mapMenuDropdown'); });
+        byId('mapMenuBtn').addEventListener('click', () => toggleDropdown('mapMenuBtn', 'mapMenuDropdown'));
         byId('mapToModeBtn').addEventListener('click', () => { closeAllDropdowns(); app.router.navigate('mode'); });
         byId('mapToProgressBtn').addEventListener('click', () => { closeAllDropdowns(); app.router.navigate('progress'); });
         byId('mapToAboutBtn').addEventListener('click', () => { closeAllDropdowns(); app.router.navigate('about'); });
         byId('briefBackBtn').addEventListener('click', () => app.router.navigate('map'));
 
         // Lab dropdown
-        byId('labMenuBtn').addEventListener('click', (e) => { e.stopPropagation(); toggleDropdown('labMenuBtn', 'labMenuDropdown'); });
+        byId('labMenuBtn').addEventListener('click', () => toggleDropdown('labMenuBtn', 'labMenuDropdown'));
         byId('labToMapBtn').addEventListener('click', () => { closeAllDropdowns(); app.router.navigate('map'); });
         byId('labToProgressBtn').addEventListener('click', () => { closeAllDropdowns(); app.router.navigate('progress'); });
         byId('labToAboutBtn').addEventListener('click', () => { closeAllDropdowns(); app.router.navigate('about'); });
 
-        // Close dropdowns on outside click
-        document.addEventListener('click', () => closeAllDropdowns());
+        // Close dropdowns when clicking outside any nav menu
+        document.addEventListener('click', (e) => {
+            const mapWrap = byId('mapNavWrap');
+            const labWrap = byId('labNavWrap');
+            if (mapWrap && !mapWrap.contains(e.target)) closeDropdown('mapMenuBtn', 'mapMenuDropdown');
+            if (labWrap && !labWrap.contains(e.target)) closeDropdown('labMenuBtn', 'labMenuDropdown');
+        });
 
         // Welcome panel buttons
         byId('welcomeCloseTopBtn').addEventListener('click', () => { hideWelcomePanel(); markWelcomeSeen(); });
