@@ -42,6 +42,9 @@ a { color: var(--accent); }
     outline-offset: 2px;
 }
 
+/* ── Hidden Attribute ── */
+[hidden] { display: none !important; }
+
 /* ── Offline Banner ── */
 .offline-banner {
     position: fixed;
